@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Mandelbrot</title>
+        <link rel='stylesheet' href='styles.css' />
+    </head>
+    <body>
+        <canvas id='canvas'></canvas>
+        <script type='text/javascript' src='mandelbrot.js'></script>
+        <script type='text/javascript'>
+        	var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+            var width = window.innerWidth;
+        	var height = window.innerHeight;
+        	var mandelbrot = new Mandelbrot(canvas, context, width, height, 255);
+        	mandelbrot.render();
+        </script>
+    </body>
+</html>
