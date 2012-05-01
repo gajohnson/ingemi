@@ -4,6 +4,16 @@
  */
 
 // Constructor
+
+/* args = {
+  upscale: [Integer]        Used to strech internal canvas dimensions for fast, low-resolution renders.
+  rangeLeft: [Float]        Width of coordinate system mapped to the canvas (smaller numbers produce zoom).
+  rangeTop: [Float]         Height of coordinate system mapped to the canvas.
+  offsetLeft: [Float]       Horizontal offset of the coordinate system relative to the center of the canvas. Units are the same as rangeLeft.
+  offsetTop: [Float]        Vertical offset of the coordinate system relative to the center of the canvas.
+  maxIteration: [Integer]   Maximum iteration used in escape-velocity calculations. High numbers produce greater color differentiation.
+  blockSize: [Integer]      Number of pixels to render concurrently. Higher values may increase performance at the cost of browser stability.
+}*/
 function Ingemi (args) {
 
     // Bootstrap the page
@@ -18,6 +28,7 @@ function Ingemi (args) {
     this.offsetLeft = args.offsetLeft || 0;
     this.offsetTop = args.offsetTop || 0;
     this.maxIteration = args.maxIteration || 255;
+    this.blockSize = args.blockSize || 2500;
 
     // Set internal canvas scale
     this.scaleCanvas();
@@ -61,37 +72,30 @@ Ingemi.prototype.scaleCanvas = function () {
 Ingemi.prototype.render = function () {
     this.timer = new Date().getTime();
     this.renderedPixels = 0;
-    this.renderedPixelsInRow = 0;
-    this.currentRow = 0;
-    this.renderRow();
+    this.renderedPixelsInBlock = 0;
+    this.blockOffset = 0;
+    this.renderBlock();
 };
 
 // Render one row asynchronously - TODO convert to static sized blocks
-Ingemi.prototype.renderRow = function () {
-    var j;
-    for (j = 0; j < this.height; j += 1) {
-        this.setPixel(this.currentRow, j);
+Ingemi.prototype.renderBlock = function () {
+    var i;
+    var lim = (this.blockSize + this.blockOffset > this.totalPixels) ? this.totalPixels - this.blockOffset : this.blockSize;
+    for (i = 0; i < lim; i += 1) {
+        var pos = this.blockOffset + i;
+        this.setPixel(pos % this.width, Math.floor(pos/this.width));
     }
 };
 
-// Asynchronously determine and set pixel (left, top)
-// and internally check if we are done rendering either a row (TODO - block) or image
+// Asynchronously determine and set the value for the specified pixel
+// and internally check if we are done rendering either a block or image
 Ingemi.prototype.setPixel = function (left, top) {
     var _this = this;
     setTimeout(function () {
         var pos = _this.gridToLine(left, top) * 4;
         var value = _this.getValue(left, top);
         _this.setPixelColor(pos, value);
-        _this.renderedPixels += 1;
-        _this.renderedPixelsInRow += 1;
-        if (_this.renderedPixels == _this.totalPixels) {
-            _this.context.putImageData(_this.image, 0, 0);
-            _this.logStats();
-        } else if (_this.renderedPixelsInRow === _this.height) {
-            _this.currentRow += 1;
-            _this.renderedPixelsInRow = 0;
-            _this.renderRow();
-        }
+        _this.updateCounters();
     }, 0);
 };
 
@@ -105,6 +109,21 @@ Ingemi.prototype.setPixelColor = function(pos, value) {
     this.image.data[pos+1] = value;
     this.image.data[pos+2] = value;
     this.image.data[pos+3] = 255;
+};
+
+// Increment block- and image-level counters (to deal with asynchronous pixel calculations)
+// Callback to renderBlock or putImageData when appropriate
+Ingemi.prototype.updateCounters = function () {
+    this.renderedPixels += 1;
+    this.renderedPixelsInBlock += 1;
+    if (this.renderedPixels == this.totalPixels) {
+        this.context.putImageData(this.image, 0, 0);
+        this.logStats();
+    } else if (this.renderedPixelsInBlock === this.blockSize) {
+        this.blockOffset += this.blockSize;
+        this.renderedPixelsInBlock = 0;
+        this.renderBlock();
+    }
 };
 
 // Main logic for Mandelbrot generation
