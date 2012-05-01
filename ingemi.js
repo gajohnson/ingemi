@@ -13,8 +13,10 @@
   offsetTop: [Float]        Vertical offset of the coordinate system relative to the center of the canvas.
   maxIteration: [Integer]   Maximum iteration used in escape-velocity calculations. High numbers produce greater color differentiation.
   blockSize: [Integer]      Number of pixels to render concurrently. Higher values may increase performance at the cost of browser stability.
-}*/
-function Ingemi (args) {
+}
+  callback: [Function]      If defined, callback will fire after a render is complete
+*/
+function Ingemi (args, callback) {
 
     // Bootstrap the page
     args = args || {};
@@ -22,18 +24,12 @@ function Ingemi (args) {
     this.makeCanvas();
     
     // Set viewport and rendering defaults
-    this.upscale = args.upscale || 1;
-    this.rangeLeft = args.rangeLeft || 1;
-    this.rangeTop = args.rangeTop || 1;
-    this.offsetLeft = args.offsetLeft || 0;
-    this.offsetTop = args.offsetTop || 0;
-    this.maxIteration = args.maxIteration || 255;
-    this.blockSize = args.blockSize || 2500;
+    this.setDefaults(args, callback);
 
     // Set internal canvas scale
     this.scaleCanvas();
 
-    // Initialize zoom controller
+    // Initialize zoom controller - TODO generalize for different fractals
     this.zoomer = new IngemiZoom(this);
 
     // Render the current view
@@ -58,6 +54,17 @@ Ingemi.prototype.makeCanvas = function () {
     this.clientHeight = this.parentDiv.clientHeight;
     this.canvas.style.width = this.clientWidth + 'px';
     this.canvas.style.height =  this.clientHeight + 'px';
+};
+
+Ingemi.prototype.setDefaults = function (args, callback) {
+    this.upscale = args.upscale || 1;
+    this.rangeLeft = args.rangeLeft || 1;
+    this.rangeTop = args.rangeTop || 1;
+    this.offsetLeft = args.offsetLeft || 0;
+    this.offsetTop = args.offsetTop || 0;
+    this.maxIteration = args.maxIteration || 255;
+    this.blockSize = args.blockSize || 2500;
+    this.callback = (typeof callback === 'function') ? callback : null;
 };
 
 // Set the internal size of the canvas element
@@ -103,7 +110,7 @@ Ingemi.prototype.setPixel = function (left, top) {
 // and write it to the imageData array
 Ingemi.prototype.setPixelColor = function(pos, value) {
     if (this.maxIteration > 255) {
-        value = Math.floor(value/maxIteration) * 255;
+        value = Math.floor(value/this.maxIteration) * 255;
     }
     this.image.data[pos] = value;
     this.image.data[pos+1] = value;
@@ -118,6 +125,7 @@ Ingemi.prototype.updateCounters = function () {
     this.renderedPixelsInBlock += 1;
     if (this.renderedPixels == this.totalPixels) {
         this.context.putImageData(this.image, 0, 0);
+        if (this.callback) this.callback();
         this.logStats();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
         this.blockOffset += this.blockSize;
