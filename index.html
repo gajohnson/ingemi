@@ -1,19 +1,21 @@
 <!doctype html>
 <html>
     <head>
-        <title>Mandelbrot</title>
+        <title>Ingemi Demo</title>
         <link rel='stylesheet' href='styles.css' />
+
+        <!-- Add these lines to your page -->
+        <link rel='stylesheet' href='ingemi.css' />
+        <script type='text/javascript' src='ingemi.js'></script>
+
     </head>
     <body>
-        <canvas id='canvas'></canvas>
-        <script type='text/javascript' src='mandelbrot.js'></script>
+        <!-- Position and style this element however you see fit -->
+        <div id='ingemi'></div>
         <script type='text/javascript'>
-        	var canvas = document.getElementById('canvas');
-            var context = canvas.getContext('2d');
-            var width = window.innerWidth;
-        	var height = window.innerHeight;
-        	var mandelbrot = new Mandelbrot(canvas, context, width, height, 255);
-        	mandelbrot.render();
+            var ingemi = new Ingemi({
+                upscale: 2
+            }); // Add any configuration here
         </script>
     </body>
 </html>
