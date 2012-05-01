@@ -110,7 +110,7 @@ Ingemi.prototype.setPixel = function (left, top) {
 // and write it to the imageData array
 Ingemi.prototype.setPixelColor = function(pos, value) {
     if (this.maxIteration > 255) {
-        value = Math.floor(value/this.maxIteration) * 255;
+        value = Math.floor(value/this.maxIteration * 255);
     }
     this.image.data[pos] = value;
     this.image.data[pos+1] = value;
