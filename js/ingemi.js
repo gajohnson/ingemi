@@ -28,9 +28,7 @@ Ingemi = function (args) {
     /** Set internal canvas scale. */
     this.scaleCanvas();
 
-    /**
-     * Initialize zoom controller - TODO generalize for different fractals.
-     */
+    /** Initialize zoom controller - TODO generalize for different fractals. */
     this.zoomer = new IngemiZoom(this);
 
     /** Render the current view. */
@@ -74,6 +72,7 @@ Ingemi.prototype.setDefaults = function (args) {
     this.maxIteration = args['maxIteration'] || 255;
     this.blockSize = args['blockSize'] || 2500;
     this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
+    this.lock = false;
 };
 
 /**
@@ -90,6 +89,11 @@ Ingemi.prototype.scaleCanvas = function () {
  * Render the entire scene using the current viewport and context.
  */
 Ingemi.prototype.render = function () {
+    if (this.lock) {
+        console.log('Ignoring request during rendering.')
+        return;
+    }
+    this.lock = true;
     this.timer = new Date().getTime();
     this.renderedPixels = 0;
     this.renderedPixelsInBlock = 0;
@@ -198,6 +202,7 @@ Ingemi.prototype.updateCounters = function () {
     if (this.renderedPixels == this.totalPixels) {
         this.context.putImageData(this.image, 0, 0);
         this.drawAxes();
+        this.lock = false;
         if (this.onrender) this.onrender();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
         this.blockOffset += this.blockSize;
