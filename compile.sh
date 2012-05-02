@@ -2,6 +2,8 @@
 echo "Generating documentation ..."
 cd _jsdoc-toolkit
 java -jar jsrun.jar app/run.js -a -t=templates/jsdoc ../js/ingemi.js
+rm -rf ../docs
+mkdir ../docs
 mv ./out/jsdoc/* ../docs/
 rm -rf ./out
 cd ..

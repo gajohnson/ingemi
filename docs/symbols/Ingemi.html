@@ -193,6 +193,8 @@ ul.inheritsList
 	
 	<li><a href="../symbols/Ingemi.html">Ingemi</a></li>
 	
+	<li><a href="../symbols/IngemiZoom.html">IngemiZoom</a></li>
+	
 </ul>
 <hr />
 			<!-- end publish.classesIndex -->
@@ -202,7 +204,7 @@ ul.inheritsList
 <!-- ============================== class title ============================ -->
 			<h1 class="classTitle">
 				
-				Namespace Ingemi
+				Class Ingemi
 			</h1>
 
 <!-- ============================== class summary ========================== -->			
@@ -210,7 +212,7 @@ ul.inheritsList
 				
 				
 			
-				
+				Ingemi
 				
 				
 					<br /><i>Defined in: </i> <a href="../symbols/src/js_ingemi.js.html">ingemi.js</a>.
@@ -220,7 +222,7 @@ ul.inheritsList
 <!-- ============================== constructor summary ==================== -->			
 			
 			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class Ingemi.">
-				<caption>Namespace Summary</caption>
+				<caption>Class Summary</caption>
 				<thead>
 					<tr>
 						<th scope="col">Constructor Attributes</th>
@@ -232,9 +234,9 @@ ul.inheritsList
 						<td class="attributes">&nbsp;</td>
 						<td class="nameDescription" >
 							<div class="fixedFont">
-								<b><a href="../symbols/Ingemi.html#constructor">Ingemi</a></b>
+								<b><a href="../symbols/Ingemi.html#constructor">Ingemi</a></b>(args)
 							</div>
-							<div class="description"></div>
+							<div class="description">Ingemi(nate) - An iterative Mandelbrot set generator in JavaScript.</div>
 						</td>
 					</tr>
 				</tbody>
@@ -242,6 +244,94 @@ ul.inheritsList
 			
 
 <!-- ============================== properties summary ===================== -->
+			
+				
+				
+				<table class="summaryTable" cellspacing="0" summary="A summary of the fields documented in the class Ingemi.">
+					<caption>Field Summary</caption>
+					<thead>
+						<tr>
+							<th scope="col">Field Attributes</th>
+							<th scope="col">Field Name and Description</th>
+						</tr>
+					</thead>
+					<tbody>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#blockSize">blockSize</a></b>
+								</div>
+								<div class="description">Number of pixels to render concurrently.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#maxIteration">maxIteration</a></b>
+								</div>
+								<div class="description">Maximum iteration used in escape-velocity calculations.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#offsetLeft">offsetLeft</a></b>
+								</div>
+								<div class="description">Horizontal offset of the coordinate system relative to the center of the canvas.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#offsetTop">offsetTop</a></b>
+								</div>
+								<div class="description">Vertical offset of the coordinate system relative to the center of the canvas.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#rangeLeft">rangeLeft</a></b>
+								</div>
+								<div class="description">Width of coordinate system mapped to the canvas (smaller numbers produce zoom).</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#rangeTop">rangeTop</a></b>
+								</div>
+								<div class="description">Height of coordinate system mapped to the canvas.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#upscale">upscale</a></b>
+								</div>
+								<div class="description">Used to strech internal canvas dimensions for fast, low-resolution renders.</div>
+							</td>
+						</tr>
+					
+					</tbody>
+				</table>
+				
+				
+				
 			
 
 <!-- ============================== methods summary ======================== -->
@@ -263,7 +353,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#drawAxes">drawAxes</a></b>()
 								</div>
-								<div class="description">Indicate the current frame being rendered</div>
+								<div class="description">Indicate the current frame being rendered.</div>
 							</td>
 						</tr>
 					
@@ -282,7 +372,7 @@ ul.inheritsList
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#getValue">getValue</a></b>(left, top)
 								</div>
 								<div class="description">Main logic for Mandelbrot generation
-TODO - Abstract out for more fractal types</div>
+    - TODO Abstract out for more fractal types</div>
 							</td>
 						</tr>
 					
@@ -301,7 +391,7 @@ TODO - Abstract out for more fractal types</div>
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#isInCartoid">isInCartoid</a></b>(left, top)
 								</div>
 								<div class="description">Simple optimization to prevent computing to maximum iteration in the center
-of the unzoomed Mandelbrot set</div>
+    of the unzoomed Mandelbrot set</div>
 							</td>
 						</tr>
 					
@@ -328,7 +418,7 @@ of the unzoomed Mandelbrot set</div>
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#render">render</a></b>()
 								</div>
-								<div class="description">Render the entire scene using the current viewport and canvas</div>
+								<div class="description">Render the entire scene using the current viewport and context</div>
 							</td>
 						</tr>
 					
@@ -365,7 +455,7 @@ of the unzoomed Mandelbrot set</div>
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#setPixel">setPixel</a></b>(left, top)
 								</div>
 								<div class="description">Asynchronously determine and set the value for the specified pixel
-and internally check if we are done rendering either a block or image</div>
+    and internally check if we are done rendering either a block or image</div>
 							</td>
 						</tr>
 					
@@ -401,21 +491,32 @@ Callback to renderBlock or putImageData when appropriate</div>
 			
 			<div class="details"><a name="constructor"> </a>
 				<div class="sectionTitle">
-					Namespace Detail
+					Class Detail
 				</div>
 				
 				<div class="fixedFont">
-						<b>Ingemi</b>
+						<b>Ingemi</b>(args)
 				</div>
 				
 				<div class="description">
-					
+					Ingemi(nate) - An iterative Mandelbrot set generator in JavaScript.
 					
 				</div>
 				
 				
 				
 				
+					
+						<dl class="detailList">
+						<dt class="heading">Parameters:</dt>
+						
+							<dt>
+								<span class="light fixedFont">{Object}</span>  <b>args</b>
+								
+							</dt>
+								<dd>An argument object to override most defaults. Valid properties are listed below.</dd>
+						
+						</dl>
 					
 					
 					
@@ -428,6 +529,165 @@ Callback to renderBlock or putImageData when appropriate</div>
 			
 
 <!-- ============================== field details ========================== -->		
+			
+				<div class="sectionTitle">
+					Field Detail
+				</div>
+				
+					<a name="blockSize"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Integer}</span>
+					<b>blockSize</b>
+					
+					</div>
+					<div class="description">
+						Number of pixels to render concurrently. Higher values may increase performance at the cost of browser stability.
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="maxIteration"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Integer}</span>
+					<b>maxIteration</b>
+					
+					</div>
+					<div class="description">
+						Maximum iteration used in escape-velocity calculations. High numbers produce greater color differentiation.
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="offsetLeft"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Float}</span>
+					<b>offsetLeft</b>
+					
+					</div>
+					<div class="description">
+						Horizontal offset of the coordinate system relative to the center of the canvas. Units are the same as rangeLeft.
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="offsetTop"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Float}</span>
+					<b>offsetTop</b>
+					
+					</div>
+					<div class="description">
+						Vertical offset of the coordinate system relative to the center of the canvas.
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="rangeLeft"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Float}</span>
+					<b>rangeLeft</b>
+					
+					</div>
+					<div class="description">
+						Width of coordinate system mapped to the canvas (smaller numbers produce zoom).
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="rangeTop"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Float}</span>
+					<b>rangeTop</b>
+					
+					</div>
+					<div class="description">
+						Height of coordinate system mapped to the canvas.
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="upscale"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Integer}</span>
+					<b>upscale</b>
+					
+					</div>
+					<div class="description">
+						Used to strech internal canvas dimensions for fast, low-resolution renders.
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					
+				
 			
 
 <!-- ============================== method details ========================= -->		
@@ -444,7 +704,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Indicate the current frame being rendered
+						Indicate the current frame being rendered. Not yet implemented.
 						
 						
 					</div>
@@ -470,7 +730,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					</div>
 					<div class="description">
 						Get and ensure the container for ingemi. Size and position of the canvas element will be
-determined from this element. If it does not exist, we cannot proceed.
+    determined from this element.
 						
 						
 					</div>
@@ -480,6 +740,16 @@ determined from this element. If it does not exist, we cannot proceed.
 						
 						
 						
+						
+							<dl class="detailList">
+							<dt class="heading">Throws:</dt>
+							
+								<dt>
+									 <b></b>
+								</dt>
+								<dd>Error if markup doesn't contain a node with id 'ingemi'</dd>
+							
+							</dl>
 						
 						
 						
@@ -496,7 +766,7 @@ determined from this element. If it does not exist, we cannot proceed.
 					</div>
 					<div class="description">
 						Main logic for Mandelbrot generation
-TODO - Abstract out for more fractal types
+    - TODO Abstract out for more fractal types
 						
 						
 					</div>
@@ -508,13 +778,13 @@ TODO - Abstract out for more fractal types
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<b>left</b>
+									<span class="light fixedFont">{Integer}</span> <b>left</b>
 									
 								</dt>
 								<dd></dd>
 							
 								<dt>
-									<b>top</b>
+									<span class="light fixedFont">{Integer}</span> <b>top</b>
 									
 								</dt>
 								<dd></dd>
@@ -550,13 +820,13 @@ TODO - Abstract out for more fractal types
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<b>left</b>
+									<span class="light fixedFont">{Integer}</span> <b>left</b>
 									
 								</dt>
 								<dd></dd>
 							
 								<dt>
-									<b>top</b>
+									<span class="light fixedFont">{Integer}</span> <b>top</b>
 									
 								</dt>
 								<dd></dd>
@@ -581,7 +851,7 @@ TODO - Abstract out for more fractal types
 					</div>
 					<div class="description">
 						Simple optimization to prevent computing to maximum iteration in the center
-of the unzoomed Mandelbrot set
+    of the unzoomed Mandelbrot set
 						
 						
 					</div>
@@ -593,13 +863,13 @@ of the unzoomed Mandelbrot set
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<b>left</b>
+									<span class="light fixedFont">{Float}</span> <b>left</b>
 									
 								</dt>
 								<dd></dd>
 							
 								<dt>
-									<b>top</b>
+									<span class="light fixedFont">{Float}</span> <b>top</b>
 									
 								</dt>
 								<dd></dd>
@@ -673,7 +943,7 @@ of the unzoomed Mandelbrot set
 					
 					</div>
 					<div class="description">
-						Render the entire scene using the current viewport and canvas
+						Render the entire scene using the current viewport and context
 						
 						
 					</div>
@@ -760,7 +1030,7 @@ of the unzoomed Mandelbrot set
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<b>args</b>
+									<span class="light fixedFont">{Object}</span> <b>args</b>
 									
 								</dt>
 								<dd></dd>
@@ -785,7 +1055,7 @@ of the unzoomed Mandelbrot set
 					</div>
 					<div class="description">
 						Asynchronously determine and set the value for the specified pixel
-and internally check if we are done rendering either a block or image
+    and internally check if we are done rendering either a block or image
 						
 						
 					</div>
@@ -797,13 +1067,13 @@ and internally check if we are done rendering either a block or image
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<b>left</b>
+									<span class="light fixedFont">{Integer}</span> <b>left</b>
 									
 								</dt>
 								<dd></dd>
 							
 								<dt>
-									<b>top</b>
+									<span class="light fixedFont">{Integer}</span> <b>top</b>
 									
 								</dt>
 								<dd></dd>
@@ -828,7 +1098,7 @@ and internally check if we are done rendering either a block or image
 					</div>
 					<div class="description">
 						Map an integer [0...maxIteration] into some rgb spectrum
-and write it to the imageData array
+    and write it to the imageData array
 						
 						
 					</div>
@@ -840,16 +1110,16 @@ and write it to the imageData array
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<b>pos</b>
+									<span class="light fixedFont">{Integer}</span> <b>pos</b>
 									
 								</dt>
-								<dd></dd>
+								<dd>The linear position of the pixel being modified</dd>
 							
 								<dt>
-									<b>value</b>
+									<span class="light fixedFont">{Integer}</span> <b>value</b>
 									
 								</dt>
-								<dd></dd>
+								<dd>The value returned by getValue [0...maxIteration]</dd>
 							
 							</dl>
 						
@@ -900,7 +1170,7 @@ Callback to renderBlock or putImageData when appropriate
 <!-- ============================== footer ================================= -->
 		<div class="fineprint" style="clear:both">
 			
-			Documentation generated by <a href="http://code.google.com/p/jsdoc-toolkit/" target="_blank">JsDoc Toolkit</a> 2.4.0 on Wed May 02 2012 00:46:17 GMT-0400 (EDT)
+			Documentation generated by <a href="http://code.google.com/p/jsdoc-toolkit/" target="_blank">JsDoc Toolkit</a> 2.4.0 on Wed May 02 2012 01:35:53 GMT-0400 (EDT)
 		</div>
 	</body>
 </html>
