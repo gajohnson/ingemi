@@ -13,18 +13,20 @@
   offsetTop: [Float]        Vertical offset of the coordinate system relative to the center of the canvas.
   maxIteration: [Integer]   Maximum iteration used in escape-velocity calculations. High numbers produce greater color differentiation.
   blockSize: [Integer]      Number of pixels to render concurrently. Higher values may increase performance at the cost of browser stability.
+  onrender: [Function]      If defined, onrender will fire after a render is complete
 }
-  callback: [Function]      If defined, callback will fire after a render is complete
 */
-function Ingemi (args, callback) {
+function Ingemi (args) {
+
+    // Avoid errors if no arguments are passed
+    args = args || {};
 
     // Bootstrap the page
-    args = args || {};
     this.ensureParent();
     this.makeCanvas();
     
     // Set viewport and rendering defaults
-    this.setDefaults(args, callback);
+    this.setDefaults(args);
 
     // Set internal canvas scale
     this.scaleCanvas();
@@ -56,15 +58,16 @@ Ingemi.prototype.makeCanvas = function () {
     this.canvas.style.height =  this.clientHeight + 'px';
 };
 
-Ingemi.prototype.setDefaults = function (args, callback) {
-    this.upscale = args.upscale || 1;
-    this.rangeLeft = args.rangeLeft || 1;
-    this.rangeTop = args.rangeTop || 1;
-    this.offsetLeft = args.offsetLeft || 0;
-    this.offsetTop = args.offsetTop || 0;
-    this.maxIteration = args.maxIteration || 255;
-    this.blockSize = args.blockSize || 2500;
-    this.callback = (typeof callback === 'function') ? callback : null;
+// 
+Ingemi.prototype.setDefaults = function (args) {
+    this.upscale = args['upscale'] || 1;
+    this.rangeLeft = args['rangeLeft'] || 1;
+    this.rangeTop = args['rangeTop'] || 1;
+    this.offsetLeft = args['offsetLeft'] || 0;
+    this.offsetTop = args['offsetTop'] || 0;
+    this.maxIteration = args['maxIteration'] || 255;
+    this.blockSize = args['blockSize'] || 2500;
+    this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
 };
 
 // Set the internal size of the canvas element
@@ -106,32 +109,9 @@ Ingemi.prototype.setPixel = function (left, top) {
     }, 0);
 };
 
-// Map an integer [0...maxIteration] into some rgb spectrum
-// and write it to the imageData array
-Ingemi.prototype.setPixelColor = function(pos, value) {
-    if (this.maxIteration > 255) {
-        value = Math.floor(value/this.maxIteration * 255);
-    }
-    this.image.data[pos] = value;
-    this.image.data[pos+1] = value;
-    this.image.data[pos+2] = value;
-    this.image.data[pos+3] = 255;
-};
-
-// Increment block- and image-level counters (to deal with asynchronous pixel calculations)
-// Callback to renderBlock or putImageData when appropriate
-Ingemi.prototype.updateCounters = function () {
-    this.renderedPixels += 1;
-    this.renderedPixelsInBlock += 1;
-    if (this.renderedPixels == this.totalPixels) {
-        this.context.putImageData(this.image, 0, 0);
-        if (this.callback) this.callback();
-        this.logStats();
-    } else if (this.renderedPixelsInBlock === this.blockSize) {
-        this.blockOffset += this.blockSize;
-        this.renderedPixelsInBlock = 0;
-        this.renderBlock();
-    }
+// Convert cartesian coordinates to a one-dimensional index
+Ingemi.prototype.gridToLine = function (left, top) {
+    return top * this.width + left;
 };
 
 // Main logic for Mandelbrot generation
@@ -164,9 +144,40 @@ Ingemi.prototype.isInCartoid = function (left, top) {
     return left <= q - (2 * p) + 0.25;
 };
 
-// Convert cartesian coordinates to a one-dimensional index
-Ingemi.prototype.gridToLine = function (left, top) {
-    return top * this.width + left;
+// Map an integer [0...maxIteration] into some rgb spectrum
+// and write it to the imageData array
+Ingemi.prototype.setPixelColor = function(pos, value) {
+    if (this.maxIteration > 255) {
+        value = Math.floor(value/this.maxIteration * 255);
+    }
+    this.image.data[pos] = value;
+    this.image.data[pos+1] = value;
+    this.image.data[pos+2] = value;
+    this.image.data[pos+3] = 255;
+};
+
+// Increment block- and image-level counters (to deal with asynchronous pixel calculations)
+// Callback to renderBlock or putImageData when appropriate
+Ingemi.prototype.updateCounters = function () {
+    this.renderedPixels += 1;
+    this.renderedPixelsInBlock += 1;
+    if (this.renderedPixels == this.totalPixels) {
+        this.context.putImageData(this.image, 0, 0);
+        this.drawAxes();
+        if (this.onrender) this.onrender();
+    } else if (this.renderedPixelsInBlock === this.blockSize) {
+        this.blockOffset += this.blockSize;
+        this.renderedPixelsInBlock = 0;
+        this.renderBlock();
+    }
+};
+
+// Indicate the current frame being rendered
+Ingemi.prototype.drawAxes = function () {
+    var margin = 30;
+    this.context.fillStyle = "rgba(255, 255, 255, 1)";
+    this.context.fillRect(0, margin, this.width, 2);
+    this.context.fillRect(margin, 0, 2, this.height);
 };
 
 // Log timing statistics
@@ -189,7 +200,7 @@ function IngemiZoom (fractal) {
 IngemiZoom.prototype.binds = function () {
     var _this = this;
     this.fractal.parentDiv.addEventListener("click", function (e) {
-        _this.handleClick(e.pageX, e.pageY);
+        _this.handleClick(e.offsetX, e.offsetY);
     });
 };
 
@@ -207,5 +218,10 @@ IngemiZoom.prototype.handleClick = function (x, y) {
     this.fractal.render();
 };
 
-window.Ingemi = Ingemi;
+/*
+ * Exports
+ */
+window['Ingemi'] = Ingemi;
+Ingemi.prototype['render'] = Ingemi.prototype.render;
+Ingemi.prototype['logStats'] = Ingemi.prototype.logStats;
 })();

@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Ingemi Benchmark</title>
+        <link rel='stylesheet' href='../css/ingemi.css' />
+        <script type='text/javascript' src='../demo/ingemi.min.js'></script>
+    </head>
+    <body>
+        <div id='ingemi' style='width:1000px;height:1000px;'div>
+        <script type='text/javascript'>
+            var runBenchmark = function (benchmarks) {
+                if (!benchmarks || benchmarks.length === 0) return;
+                var benchmark = benchmarks.splice(0,1)[0];
+                console.log(benchmark.label);
+                var ingemi = new Ingemi(benchmark);
+            };
+            var onrender = function () {
+                this.logStats();
+                runBenchmark(benchmarks);
+            };
+            var benchmarks = [{
+                label: 'Default',
+                onrender: onrender
+            },
+            {
+                label: 'Low resolution',
+                upscale: 4,
+                onrender: onrender
+            },
+            {
+                label: 'High contrast',
+                maxIteration: 2000,
+                onrender: onrender
+            },
+            {
+                label: 'Medium resolution, high contrast',
+                upscale: 2,
+                maxIteration: 2000,
+                onrender: onrender
+
+            },
+            {
+                label: 'Ultra-high resolution',
+                upscale: 0.25,
+                onrender: onrender
+            }];
+            runBenchmark(benchmarks);
+        </script>
+    </body>
+</html>
