@@ -14,32 +14,33 @@
  * @property {Integer} blockSize Number of pixels to render concurrently. Higher values may increase performance at the cost of browser stability.
  * @property {Function} onrender Callback function fired every time a render is completed.
  */
-function Ingemi (args) {
+Ingemi = function (args) {
 
-    /** Avoid errors if no arguments are passed */
     args = args || {};
 
-    /** Bootstrap the page */
+    /** Bootstrap the page. */
     this.ensureParent();
     this.makeCanvas();
     
-    /** Set viewport and rendering defaults */
+    /** Set viewport and rendering defaults. */
     this.setDefaults(args);
 
-    /** Set internal canvas scale */
+    /** Set internal canvas scale. */
     this.scaleCanvas();
 
-    /** Initialize zoom controller - TODO generalize for different fractals */
+    /**
+     * Initialize zoom controller - TODO generalize for different fractals.
+     */
     this.zoomer = new IngemiZoom(this);
 
-    /** Render the current view */
+    /** Render the current view. */
     this.render();
 }
 
 /**
  * Get and ensure the container for Ingemi. Size and position of the canvas element will be
  *     determined from this element.
- * @throws Error if markup doesn't contain a node with id 'ingemi'
+ * @throws Error if markup doesn't contain a node with id 'ingemi'.
  */
 Ingemi.prototype.ensureParent = function () {
     this.parentDiv = document.getElementById('ingemi');
@@ -49,7 +50,7 @@ Ingemi.prototype.ensureParent = function () {
 };
 
 /**
- * Create a canvas in the parent div and inherit its size
+ * Create a canvas in the parent div and inherit its size.
  */
 Ingemi.prototype.makeCanvas = function () {
     this.canvas = document.createElement('canvas');
@@ -62,7 +63,7 @@ Ingemi.prototype.makeCanvas = function () {
 };
 
 /**
- * @param {Object} args See class definition for valid properties of args
+ * @param {Object} args See class definition for valid properties of args.
  */
 Ingemi.prototype.setDefaults = function (args) {
     this.upscale = args['upscale'] || 1;
@@ -76,7 +77,7 @@ Ingemi.prototype.setDefaults = function (args) {
 };
 
 /**
- * Set the internal size of the canvas element
+ * Set the internal size of the canvas element.
  */
 Ingemi.prototype.scaleCanvas = function () {
     this.width = this.canvas.width = Math.floor(this.clientWidth / this.upscale);
@@ -86,7 +87,7 @@ Ingemi.prototype.scaleCanvas = function () {
 };
 
 /**
- * Render the entire scene using the current viewport and context
+ * Render the entire scene using the current viewport and context.
  */
 Ingemi.prototype.render = function () {
     this.timer = new Date().getTime();
@@ -97,7 +98,7 @@ Ingemi.prototype.render = function () {
 };
 
 /**
- * Render one row asynchronously - TODO convert to static sized blocks
+ * Render one row asynchronously - TODO convert to static sized blocks.
  */
 Ingemi.prototype.renderBlock = function () {
     var i;
@@ -110,7 +111,7 @@ Ingemi.prototype.renderBlock = function () {
 
 /**
  * Asynchronously determine and set the value for the specified pixel
- *     and internally check if we are done rendering either a block or image
+ *     and internally check if we are done rendering either a block or image.
  * @param {Integer} left
  * @param {Integer} top
  */
@@ -125,7 +126,7 @@ Ingemi.prototype.setPixel = function (left, top) {
 };
 
 /**
- * Convert cartesian coordinates to a one-dimensional index
+ * Convert cartesian coordinates to a one-dimensional index.
  * @param {Integer} left
  * @param {Integer} top
  */
@@ -135,7 +136,7 @@ Ingemi.prototype.gridToLine = function (left, top) {
 
 /**
  * Main logic for Mandelbrot generation
- *     - TODO Abstract out for more fractal types
+ *     - TODO Abstract out for more fractal types.
  * @param {Integer} left
  * @param {Integer} top
  */
@@ -161,7 +162,7 @@ Ingemi.prototype.getValue = function (left, top) {
 
 /**
  * Simple optimization to prevent computing to maximum iteration in the center
- *     of the unzoomed Mandelbrot set
+ *     of the unzoomed Mandelbrot set.
  * @param {Float} left
  * @param {Float} top
  */
@@ -173,7 +174,7 @@ Ingemi.prototype.isInCartoid = function (left, top) {
 
 /**
  * Map an integer [0...maxIteration] into some rgb spectrum
- *     and write it to the imageData array
+ *     and write it to the imageData array.
  * @param {Integer} pos The linear position of the pixel being modified
  * @param {Integer} value The value returned by getValue [0...maxIteration]
  */
@@ -188,8 +189,8 @@ Ingemi.prototype.setPixelColor = function(pos, value) {
 };
 
 /**
- * Increment block- and image-level counters (to deal with asynchronous pixel calculations)
- * Callback to renderBlock or putImageData when appropriate
+ * Increment block- and image-level counters (to deal with asynchronous pixel calculations).
+ *     Callback to renderBlock or putImageData when appropriate.
  */
 Ingemi.prototype.updateCounters = function () {
     this.renderedPixels += 1;
@@ -216,7 +217,7 @@ Ingemi.prototype.drawAxes = function () {
 };
 
 /**
- * Log timing statistics
+ * Log timing statistics.
  */
 Ingemi.prototype.logStats = function() {
     console.log(
@@ -227,19 +228,19 @@ Ingemi.prototype.logStats = function() {
 
 
 /**
- * A helper class to handle viewport modification in Ingemi
+ * A helper class to handle viewport modification in Ingemi.
  * @name IngemiZoom
  * @class IngemiZoom
  * @constructor
  * @param {Ingemi} fractal
  */
-function IngemiZoom (fractal) {
+IngemiZoom = function (fractal) {
     this.fractal = fractal;
     this.binds();
 }
 
 /**
- * Bind all UI events
+ * Bind all UI events.
  */
 IngemiZoom.prototype.binds = function () {
     var _this = this;
@@ -249,7 +250,7 @@ IngemiZoom.prototype.binds = function () {
 };
 
 /**
- * Handle click: center on (x, y) and zoom 2x
+ * Handle click: center on (x, y) and zoom 2x.
  * @param {Integer} x
  * @param {Integer} y
  */

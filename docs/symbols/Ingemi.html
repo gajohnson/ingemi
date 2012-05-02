@@ -301,6 +301,16 @@ ul.inheritsList
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
 								<div class="fixedFont">
+								<b><a href="../symbols/Ingemi.html#onrender">onrender</a></b>
+								</div>
+								<div class="description">Callback function fired every time a render is completed.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
 								<b><a href="../symbols/Ingemi.html#rangeLeft">rangeLeft</a></b>
 								</div>
 								<div class="description">Width of coordinate system mapped to the canvas (smaller numbers produce zoom).</div>
@@ -362,7 +372,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#ensureParent">ensureParent</a></b>()
 								</div>
-								<div class="description">Get and ensure the container for ingemi.</div>
+								<div class="description">Get and ensure the container for Ingemi.</div>
 							</td>
 						</tr>
 					
@@ -372,7 +382,7 @@ ul.inheritsList
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#getValue">getValue</a></b>(left, top)
 								</div>
 								<div class="description">Main logic for Mandelbrot generation
-    - TODO Abstract out for more fractal types</div>
+    - TODO Abstract out for more fractal types.</div>
 							</td>
 						</tr>
 					
@@ -381,7 +391,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#gridToLine">gridToLine</a></b>(left, top)
 								</div>
-								<div class="description">Convert cartesian coordinates to a one-dimensional index</div>
+								<div class="description">Convert cartesian coordinates to a one-dimensional index.</div>
 							</td>
 						</tr>
 					
@@ -391,7 +401,7 @@ ul.inheritsList
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#isInCartoid">isInCartoid</a></b>(left, top)
 								</div>
 								<div class="description">Simple optimization to prevent computing to maximum iteration in the center
-    of the unzoomed Mandelbrot set</div>
+    of the unzoomed Mandelbrot set.</div>
 							</td>
 						</tr>
 					
@@ -400,7 +410,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#logStats">logStats</a></b>()
 								</div>
-								<div class="description">Log timing statistics</div>
+								<div class="description">Log timing statistics.</div>
 							</td>
 						</tr>
 					
@@ -409,7 +419,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#makeCanvas">makeCanvas</a></b>()
 								</div>
-								<div class="description">Create a canvas in the parent div and inherit its size</div>
+								<div class="description">Create a canvas in the parent div and inherit its size.</div>
 							</td>
 						</tr>
 					
@@ -418,7 +428,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#render">render</a></b>()
 								</div>
-								<div class="description">Render the entire scene using the current viewport and context</div>
+								<div class="description">Render the entire scene using the current viewport and context.</div>
 							</td>
 						</tr>
 					
@@ -427,7 +437,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#renderBlock">renderBlock</a></b>()
 								</div>
-								<div class="description">Render one row asynchronously - TODO convert to static sized blocks</div>
+								<div class="description">Render one row asynchronously - TODO convert to static sized blocks.</div>
 							</td>
 						</tr>
 					
@@ -436,7 +446,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#scaleCanvas">scaleCanvas</a></b>()
 								</div>
-								<div class="description">Set the internal size of the canvas element</div>
+								<div class="description">Set the internal size of the canvas element.</div>
 							</td>
 						</tr>
 					
@@ -455,7 +465,7 @@ ul.inheritsList
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#setPixel">setPixel</a></b>(left, top)
 								</div>
 								<div class="description">Asynchronously determine and set the value for the specified pixel
-    and internally check if we are done rendering either a block or image</div>
+    and internally check if we are done rendering either a block or image.</div>
 							</td>
 						</tr>
 					
@@ -473,8 +483,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#updateCounters">updateCounters</a></b>()
 								</div>
-								<div class="description">Increment block- and image-level counters (to deal with asynchronous pixel calculations)
-Callback to renderBlock or putImageData when appropriate</div>
+								<div class="description">Increment block- and image-level counters (to deal with asynchronous pixel calculations).</div>
 							</td>
 						</tr>
 					
@@ -622,6 +631,28 @@ Callback to renderBlock or putImageData when appropriate</div>
 
 					<hr />
 				
+					<a name="onrender"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Function}</span>
+					<b>onrender</b>
+					
+					</div>
+					<div class="description">
+						Callback function fired every time a render is completed.
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					<hr />
+				
 					<a name="rangeLeft"> </a>
 					<div class="fixedFont">
 					
@@ -729,7 +760,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Get and ensure the container for ingemi. Size and position of the canvas element will be
+						Get and ensure the container for Ingemi. Size and position of the canvas element will be
     determined from this element.
 						
 						
@@ -747,7 +778,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 								<dt>
 									 <b></b>
 								</dt>
-								<dd>Error if markup doesn't contain a node with id 'ingemi'</dd>
+								<dd>Error if markup doesn't contain a node with id 'ingemi'.</dd>
 							
 							</dl>
 						
@@ -766,7 +797,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					</div>
 					<div class="description">
 						Main logic for Mandelbrot generation
-    - TODO Abstract out for more fractal types
+    - TODO Abstract out for more fractal types.
 						
 						
 					</div>
@@ -808,7 +839,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Convert cartesian coordinates to a one-dimensional index
+						Convert cartesian coordinates to a one-dimensional index.
 						
 						
 					</div>
@@ -851,7 +882,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					</div>
 					<div class="description">
 						Simple optimization to prevent computing to maximum iteration in the center
-    of the unzoomed Mandelbrot set
+    of the unzoomed Mandelbrot set.
 						
 						
 					</div>
@@ -893,7 +924,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Log timing statistics
+						Log timing statistics.
 						
 						
 					</div>
@@ -918,7 +949,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Create a canvas in the parent div and inherit its size
+						Create a canvas in the parent div and inherit its size.
 						
 						
 					</div>
@@ -943,7 +974,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Render the entire scene using the current viewport and context
+						Render the entire scene using the current viewport and context.
 						
 						
 					</div>
@@ -968,7 +999,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Render one row asynchronously - TODO convert to static sized blocks
+						Render one row asynchronously - TODO convert to static sized blocks.
 						
 						
 					</div>
@@ -993,7 +1024,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Set the internal size of the canvas element
+						Set the internal size of the canvas element.
 						
 						
 					</div>
@@ -1033,7 +1064,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 									<span class="light fixedFont">{Object}</span> <b>args</b>
 									
 								</dt>
-								<dd></dd>
+								<dd>See class definition for valid properties of args.</dd>
 							
 							</dl>
 						
@@ -1055,7 +1086,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					</div>
 					<div class="description">
 						Asynchronously determine and set the value for the specified pixel
-    and internally check if we are done rendering either a block or image
+    and internally check if we are done rendering either a block or image.
 						
 						
 					</div>
@@ -1098,7 +1129,7 @@ Callback to renderBlock or putImageData when appropriate</div>
 					</div>
 					<div class="description">
 						Map an integer [0...maxIteration] into some rgb spectrum
-    and write it to the imageData array
+    and write it to the imageData array.
 						
 						
 					</div>
@@ -1140,8 +1171,8 @@ Callback to renderBlock or putImageData when appropriate</div>
 					
 					</div>
 					<div class="description">
-						Increment block- and image-level counters (to deal with asynchronous pixel calculations)
-Callback to renderBlock or putImageData when appropriate
+						Increment block- and image-level counters (to deal with asynchronous pixel calculations).
+    Callback to renderBlock or putImageData when appropriate.
 						
 						
 					</div>
@@ -1170,7 +1201,7 @@ Callback to renderBlock or putImageData when appropriate
 <!-- ============================== footer ================================= -->
 		<div class="fineprint" style="clear:both">
 			
-			Documentation generated by <a href="http://code.google.com/p/jsdoc-toolkit/" target="_blank">JsDoc Toolkit</a> 2.4.0 on Wed May 02 2012 01:35:53 GMT-0400 (EDT)
+			Documentation generated by <a href="http://code.google.com/p/jsdoc-toolkit/" target="_blank">JsDoc Toolkit</a> 2.4.0 on Wed May 02 2012 01:52:26 GMT-0400 (EDT)
 		</div>
 	</body>
 </html>
