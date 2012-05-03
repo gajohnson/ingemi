@@ -6,16 +6,23 @@
         <script type='text/javascript' src='../demo/ingemi.min.js'></script>
     </head>
     <body>
-        <div id='ingemi' style='width:1000px;height:1000px;'div>
+        <div id='benchmark' style='width:1000px;height:1000px;'div>
         <script type='text/javascript'>
+            var parentDiv = document.getElementById('benchmark');
+            var timer = null;
             var runBenchmark = function (benchmarks) {
+                if (timer) {
+                    console.log(((new Date().getTime() - timer) / 1000) + ' seconds');
+                }
+                timer = new Date().getTime();
                 if (!benchmarks || benchmarks.length === 0) return;
                 var benchmark = benchmarks.splice(0,1)[0];
                 console.log(benchmark.label);
-                var ingemi = new Ingemi(benchmark);
+                var ingemi = new Ingemi(parentDiv, benchmark);
+                ingemi.init();
+                ingemi.render();
             };
             var onrender = function () {
-                this.logStats();
                 runBenchmark(benchmarks);
             };
             var benchmarks = [{

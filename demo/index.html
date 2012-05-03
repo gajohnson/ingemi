@@ -13,9 +13,12 @@
         <!-- Position and style this element however you see fit -->
         <div id='ingemi'></div>
         <script type='text/javascript'>
-            var ingemi = new Ingemi({
-                upscale: 4
-            }); // Add any configuration here
+            var parentDiv = document.getElementById('ingemi');
+            var ingemi = new Ingemi(parentDiv, {
+                upscale: 2
+            }); // Add any additional configuration here
+            ingemi.init();
+            ingemi.render();
         </script>
     </body>
 </html>

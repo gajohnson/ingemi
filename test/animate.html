@@ -6,17 +6,18 @@
 
         <!-- Add these lines to your page -->
         <link rel='stylesheet' href='../css/ingemi.css' />
-        <script type='text/javascript' src='../demi/ingemi.min.js'></script>
+        <script type='text/javascript' src='../demo/ingemi.min.js'></script>
 
     </head>
     <body>
         <!-- Position and style this element however you see fit -->
-        <div id='ingemi' style='width:400px;height:200px'></div>
+        <div id='animation' style='width:400px;height:200px'></div>
         <script type='text/javascript'>
+            var parentDiv = document.getElementById('animation');
             addEventListener('click', function (e) {
                 ingemi.zoomer.handleClick(e.offsetX, e.offsetY);
             });
-            var ingemi = new Ingemi({
+            var ingemi = new Ingemi(parentDiv, {
                 upscale: 2
             }, function () {
                 ingemi.callback = function () {
@@ -26,7 +27,9 @@
                     ingemi.offsetTop += ingemi.rangeTop;
                     ingemi.render();
                 };
-            }); // Add any configuration here
+            });
+            ingemi.init();
+            ingemi.render();
         </script>
     </body>
 </html>

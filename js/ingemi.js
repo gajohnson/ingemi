@@ -4,47 +4,49 @@
  * @name Ingemi
  * @class Ingemi
  * @constructor
- * @param {Object} args An argument object to override most defaults. Valid properties are listed below.
- * @property {Integer} upscale Used to strech internal canvas dimensions for fast, low-resolution renders.
- * @property {Float} rangeLeft Width of coordinate system mapped to the canvas (smaller numbers produce zoom).
+ * @param {Node} parentDiv The container where Ingemi will render.
+ * @param {Object} args An argument object to override most defaults. Valid
+ *     properties are listed below.
+ * @property {Integer} upscale Used to strech internal canvas dimensions for
+ *     fast, low-resolution renders.
+ * @property {Float} rangeLeft Width of coordinate system mapped to the canvas
+ *     (smaller numbers produce zoom).
  * @property {Float} rangeTop Height of coordinate system mapped to the canvas.
- * @property {Float} offsetLeft Horizontal offset of the coordinate system relative to the center of the canvas. Units are the same as rangeLeft.
- * @property {Float} offsetTop Vertical offset of the coordinate system relative to the center of the canvas.
- * @property {Integer} maxIteration Maximum iteration used in escape-velocity calculations. High numbers produce greater color differentiation.
- * @property {Integer} blockSize Number of pixels to render concurrently. Higher values may increase performance at the cost of browser stability.
- * @property {Function} onrender Callback function fired every time a render is completed.
+ * @property {Float} offsetLeft Horizontal offset of the coordinate system
+ *     relative to the center of the canvas. Units are the same as rangeLeft.
+ * @property {Float} offsetTop Vertical offset of the coordinate system
+ *     relative to the center of the canvas.
+ * @property {Integer} maxIteration Maximum iteration used in escape-velocity
+ *     calculations. High numbers produce greater color differentiation.
+ * @property {Integer} blockSize Number of pixels to render concurrently.
+ *     Higher values may increase performance at the cost of browser stability.
+ * @property {Function} onrender Callback function fired every time a render
+ *     is completed.
+ * @throws Error if parentDiv is not a valid <div>.
  */
-Ingemi = function (args) {
-
+Ingemi = function (parentDiv, args) {
+    if (!parentDiv || parentDiv.nodeName != 'DIV') {
+        throw new Error('You must specify the div where Ingemi will render');
+    }
     args = args || {};
-
-    /** Bootstrap the page. */
-    this.ensureParent();
-    this.makeCanvas();
-    
-    /** Set viewport and rendering defaults. */
-    this.setDefaults(args);
-
-    /** Set internal canvas scale. */
-    this.scaleCanvas();
-
-    /** Initialize zoom controller - TODO generalize for different fractals. */
-    this.zoomer = new IngemiZoom(this);
-
-    /** Render the current view. */
-    this.render();
-}
+    this.parentDiv = parentDiv;
+    this.upscale = args['upscale'] || 1;
+    this.rangeLeft = args['rangeLeft'] || 1;
+    this.rangeTop = args['rangeTop'] || 1;
+    this.offsetLeft = args['offsetLeft'] || 0;
+    this.offsetTop = args['offsetTop'] || 0;
+    this.maxIteration = args['maxIteration'] || 255;
+    this.blockSize = args['blockSize'] || 2500;
+    this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
+    this.lock = false;
+};
 
 /**
- * Get and ensure the container for Ingemi. Size and position of the canvas element will be
- *     determined from this element.
- * @throws Error if markup doesn't contain a node with id 'ingemi'.
+ * Initialize the canvas element.
  */
-Ingemi.prototype.ensureParent = function () {
-    this.parentDiv = document.getElementById('ingemi');
-    if (!this.parentDiv) {
-        throw new Error('You must include "<div id=\'ingemi\'></div>" in your markup');
-    }
+Ingemi.prototype.init = function () {
+    this.makeCanvas();
+    this.scaleCanvas();
 };
 
 /**
@@ -61,26 +63,13 @@ Ingemi.prototype.makeCanvas = function () {
 };
 
 /**
- * @param {Object} args See class definition for valid properties of args.
- */
-Ingemi.prototype.setDefaults = function (args) {
-    this.upscale = args['upscale'] || 1;
-    this.rangeLeft = args['rangeLeft'] || 1;
-    this.rangeTop = args['rangeTop'] || 1;
-    this.offsetLeft = args['offsetLeft'] || 0;
-    this.offsetTop = args['offsetTop'] || 0;
-    this.maxIteration = args['maxIteration'] || 255;
-    this.blockSize = args['blockSize'] || 2500;
-    this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
-    this.lock = false;
-};
-
-/**
  * Set the internal size of the canvas element.
  */
 Ingemi.prototype.scaleCanvas = function () {
-    this.width = this.canvas.width = Math.floor(this.clientWidth / this.upscale);
-    this.height = this.canvas.height = Math.floor(this.clientHeight / this.upscale);
+    this.width = Math.floor(this.clientWidth / this.upscale);
+    this.height = Math.floor(this.clientHeight / this.upscale);
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
     this.image = this.context.createImageData(this.width, this.height);
     this.totalPixels = this.width * this.height;
 };
@@ -89,12 +78,8 @@ Ingemi.prototype.scaleCanvas = function () {
  * Render the entire scene using the current viewport and context.
  */
 Ingemi.prototype.render = function () {
-    if (this.lock) {
-        console.log('Ignoring request during rendering.')
-        return;
-    }
+    if (this.lock) return;
     this.lock = true;
-    this.timer = new Date().getTime();
     this.renderedPixels = 0;
     this.renderedPixelsInBlock = 0;
     this.blockOffset = 0;
@@ -102,11 +87,17 @@ Ingemi.prototype.render = function () {
 };
 
 /**
- * Render one row asynchronously - TODO convert to static sized blocks.
+ * Render one row asynchronously. Increasing blockSize can potentially
+ *     decrease rendering times at the expense of CPU usage.
  */
 Ingemi.prototype.renderBlock = function () {
+    /**
+     * Prevent pixel calculation beyond the total number of pixel
+     * @type {Boolean}
+     */
+    var overSized = this.blockSize + this.blockOffset > this.totalPixels;
+    var lim = overSized ? this.totalPixels - this.blockOffset : this.blockSize;
     var i;
-    var lim = (this.blockSize + this.blockOffset > this.totalPixels) ? this.totalPixels - this.blockOffset : this.blockSize;
     for (i = 0; i < lim; i += 1) {
         var pos = this.blockOffset + i;
         this.setPixel(pos % this.width, Math.floor(pos/this.width));
@@ -145,8 +136,9 @@ Ingemi.prototype.gridToLine = function (left, top) {
  * @param {Integer} top
  */
 Ingemi.prototype.getValue = function (left, top) {
-    var scaledX = (this.rangeLeft * 3.5 * left / this.width) - 2.5 + this.offsetLeft;
-    var scaledY = (this.rangeTop * 2 * top / this.height) - 1 + this.offsetTop;
+    var scaledX, scaledY;
+    scaledX = this.rangeLeft * 3.5 * left / this.width - 2.5 + this.offsetLeft;
+    scaledY = this.rangeTop * 2 * top / this.height - 1 + this.offsetTop;
     /** Optimize against inner cartoid and return known maxIteration */
     if (this.isInCartoid(scaledX, scaledY)) {
         return this.maxIteration;
@@ -193,84 +185,56 @@ Ingemi.prototype.setPixelColor = function(pos, value) {
 };
 
 /**
- * Increment block- and image-level counters (to deal with asynchronous pixel calculations).
- *     Callback to renderBlock or putImageData when appropriate.
+ * Increment block- and image-level counters (to deal with asynchronous pixel
+ *     calculations).
  */
 Ingemi.prototype.updateCounters = function () {
     this.renderedPixels += 1;
     this.renderedPixelsInBlock += 1;
     if (this.renderedPixels == this.totalPixels) {
-        this.context.putImageData(this.image, 0, 0);
-        this.drawAxes();
-        this.lock = false;
-        if (this.onrender) this.onrender();
+        this.finalize();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
-        this.blockOffset += this.blockSize;
-        this.renderedPixelsInBlock = 0;
-        this.renderBlock();
+        this.nextBlock();
     }
 };
 
 /**
- * Indicate the current frame being rendered. Not yet implemented.
+ * Increment the global block offset, reset the block-level counter, and make
+ *     rendering call.
  */
-Ingemi.prototype.drawAxes = function () {
-    var margin = 30;
-    this.context.fillStyle = "rgba(255, 255, 255, 1)";
-    this.context.fillRect(0, margin, this.width, 2);
-    this.context.fillRect(margin, 0, 2, this.height);
+Ingemi.prototype.nextBlock = function () {
+    this.blockOffset += this.blockSize;
+    this.renderedPixelsInBlock = 0;
+    this.renderBlock();
 };
 
 /**
- * Log timing statistics.
+ * Draw current image to canvas, unlock future rendering calls, and finally
+ *     call onrender
  */
-Ingemi.prototype.logStats = function() {
-    console.log(
-        'Rendered ' + this.width + ' * ' + this.height + ' pixels in ' +
-        ((new Date().getTime() - this.timer)/1000) + ' seconds.'
-    );
-};
-
-
-/**
- * A helper class to handle viewport modification in Ingemi.
- * @name IngemiZoom
- * @class IngemiZoom
- * @constructor
- * @param {Ingemi} fractal
- */
-IngemiZoom = function (fractal) {
-    this.fractal = fractal;
-    this.binds();
-}
-
-/**
- * Bind all UI events.
- */
-IngemiZoom.prototype.binds = function () {
-    var _this = this;
-    this.fractal.parentDiv.addEventListener("click", function (e) {
-        _this.handleClick(e.offsetX, e.offsetY);
-    });
+Ingemi.prototype.finalize = function () {
+    this.context.putImageData(this.image, 0, 0);
+    this.lock = false;
+    if (this.onrender) this.onrender();
 };
 
 /**
- * Handle click: center on (x, y) and zoom 2x.
- * @param {Integer} x
- * @param {Integer} y
+ * Center the viewport on (x, y) and zoom in 2x.
+ * @param {Integer} x In pixels from the left of the canvas
+ * @param {Integer} y In pixels from the top of the canvas
  */
-IngemiZoom.prototype.handleClick = function (x, y) {
-    x = x / this.fractal.upscale;
-    y = y / this.fractal.upscale;
-    var targetLeft = x / this.fractal.width - 0.5;
-    var targetTop = y / this.fractal.height - 0.5;
-    this.fractal.offsetLeft += targetLeft * this.fractal.rangeLeft * 3.5;
-    this.fractal.offsetTop += targetTop * this.fractal.rangeTop * 2;
-    this.fractal.rangeLeft /= 2;
-    this.fractal.rangeTop /= 2;
-    this.fractal.offsetLeft += this.fractal.rangeLeft * 1.75;
-    this.fractal.offsetTop += this.fractal.rangeTop;
-    this.fractal.render();
+Ingemi.prototype.zoom = function (x, y) {
+    x = x / this.upscale;
+    y = y / this.upscale;
+    var targetLeft = x / this.width - 0.5;
+    var targetTop = y / this.height - 0.5;
+    this.offsetLeft += targetLeft * this.rangeLeft * 3.5;
+    this.offsetTop += targetTop * this.rangeTop * 2;
+    this.rangeLeft /= 2;
+    this.rangeTop /= 2;
+    this.offsetLeft += this.rangeLeft * 1.75;
+    this.offsetTop += this.rangeTop;
+    this.render();
 };
 
 /**
@@ -279,12 +243,17 @@ IngemiZoom.prototype.handleClick = function (x, y) {
 window['Ingemi'] = Ingemi;
 
 /**
+ * @export Ingemi.prototype.init as window.Ingemi.prototype.init
+ */
+Ingemi.prototype['init'] = Ingemi.prototype.init;
+
+/**
  * @export Ingemi.prototype.render as window.Ingemi.prototype.render
  */
 Ingemi.prototype['render'] = Ingemi.prototype.render;
 
 /**
- * @export Ingemi.prototype.logStats as window.Ingemi.prototype.logStats
+ * @export Ingemi.prototype.zoom as window.Ingemi.prototype.zoom
  */
-Ingemi.prototype['logStats'] = Ingemi.prototype.logStats;
+Ingemi.prototype['zoom'] = Ingemi.prototype.zoom;
 })();

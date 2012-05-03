@@ -193,8 +193,6 @@ ul.inheritsList
 	
 	<li><a href="../symbols/Ingemi.html">Ingemi</a></li>
 	
-	<li><a href="../symbols/IngemiZoom.html">IngemiZoom</a></li>
-	
 </ul>
 <hr />
 			<!-- end publish.classesIndex -->
@@ -234,7 +232,7 @@ ul.inheritsList
 						<td class="attributes">&nbsp;</td>
 						<td class="nameDescription" >
 							<div class="fixedFont">
-								<b><a href="../symbols/Ingemi.html#constructor">Ingemi</a></b>(args)
+								<b><a href="../symbols/Ingemi.html#constructor">Ingemi</a></b>(parentDiv, args)
 							</div>
 							<div class="description">Ingemi(nate) - An iterative Mandelbrot set generator in JavaScript.</div>
 						</td>
@@ -273,7 +271,8 @@ ul.inheritsList
 								<div class="fixedFont">
 								<b><a href="../symbols/Ingemi.html#maxIteration">maxIteration</a></b>
 								</div>
-								<div class="description">Maximum iteration used in escape-velocity calculations.</div>
+								<div class="description">Maximum iteration used in escape-velocity
+    calculations.</div>
 							</td>
 						</tr>
 					
@@ -283,7 +282,8 @@ ul.inheritsList
 								<div class="fixedFont">
 								<b><a href="../symbols/Ingemi.html#offsetLeft">offsetLeft</a></b>
 								</div>
-								<div class="description">Horizontal offset of the coordinate system relative to the center of the canvas.</div>
+								<div class="description">Horizontal offset of the coordinate system
+    relative to the center of the canvas.</div>
 							</td>
 						</tr>
 					
@@ -293,7 +293,8 @@ ul.inheritsList
 								<div class="fixedFont">
 								<b><a href="../symbols/Ingemi.html#offsetTop">offsetTop</a></b>
 								</div>
-								<div class="description">Vertical offset of the coordinate system relative to the center of the canvas.</div>
+								<div class="description">Vertical offset of the coordinate system
+    relative to the center of the canvas.</div>
 							</td>
 						</tr>
 					
@@ -303,7 +304,8 @@ ul.inheritsList
 								<div class="fixedFont">
 								<b><a href="../symbols/Ingemi.html#onrender">onrender</a></b>
 								</div>
-								<div class="description">Callback function fired every time a render is completed.</div>
+								<div class="description">Callback function fired every time a render
+    is completed.</div>
 							</td>
 						</tr>
 					
@@ -313,7 +315,8 @@ ul.inheritsList
 								<div class="fixedFont">
 								<b><a href="../symbols/Ingemi.html#rangeLeft">rangeLeft</a></b>
 								</div>
-								<div class="description">Width of coordinate system mapped to the canvas (smaller numbers produce zoom).</div>
+								<div class="description">Width of coordinate system mapped to the canvas
+    (smaller numbers produce zoom).</div>
 							</td>
 						</tr>
 					
@@ -333,7 +336,8 @@ ul.inheritsList
 								<div class="fixedFont">
 								<b><a href="../symbols/Ingemi.html#upscale">upscale</a></b>
 								</div>
-								<div class="description">Used to strech internal canvas dimensions for fast, low-resolution renders.</div>
+								<div class="description">Used to strech internal canvas dimensions for
+    fast, low-resolution renders.</div>
 							</td>
 						</tr>
 					
@@ -361,18 +365,10 @@ ul.inheritsList
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#drawAxes">drawAxes</a></b>()
+								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#finalize">finalize</a></b>()
 								</div>
-								<div class="description">Indicate the current frame being rendered.</div>
-							</td>
-						</tr>
-					
-						<tr>
-							<td class="attributes">&nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#ensureParent">ensureParent</a></b>()
-								</div>
-								<div class="description">Get and ensure the container for Ingemi.</div>
+								<div class="description">Draw current image to canvas, unlock future rendering calls, and finally
+    call onrender</div>
 							</td>
 						</tr>
 					
@@ -398,6 +394,15 @@ ul.inheritsList
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#init">init</a></b>()
+								</div>
+								<div class="description">Initialize the canvas element.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#isInCartoid">isInCartoid</a></b>(left, top)
 								</div>
 								<div class="description">Simple optimization to prevent computing to maximum iteration in the center
@@ -408,18 +413,19 @@ ul.inheritsList
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#logStats">logStats</a></b>()
+								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#makeCanvas">makeCanvas</a></b>()
 								</div>
-								<div class="description">Log timing statistics.</div>
+								<div class="description">Create a canvas in the parent div and inherit its size.</div>
 							</td>
 						</tr>
 					
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#makeCanvas">makeCanvas</a></b>()
+								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#nextBlock">nextBlock</a></b>()
 								</div>
-								<div class="description">Create a canvas in the parent div and inherit its size.</div>
+								<div class="description">Increment the global block offset, reset the block-level counter, and make
+    rendering call.</div>
 							</td>
 						</tr>
 					
@@ -437,7 +443,7 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#renderBlock">renderBlock</a></b>()
 								</div>
-								<div class="description">Render one row asynchronously - TODO convert to static sized blocks.</div>
+								<div class="description">Render one row asynchronously.</div>
 							</td>
 						</tr>
 					
@@ -447,15 +453,6 @@ ul.inheritsList
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#scaleCanvas">scaleCanvas</a></b>()
 								</div>
 								<div class="description">Set the internal size of the canvas element.</div>
-							</td>
-						</tr>
-					
-						<tr>
-							<td class="attributes">&nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#setDefaults">setDefaults</a></b>(args)
-								</div>
-								<div class="description"></div>
 							</td>
 						</tr>
 					
@@ -483,7 +480,17 @@ ul.inheritsList
 							<td class="nameDescription">
 								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#updateCounters">updateCounters</a></b>()
 								</div>
-								<div class="description">Increment block- and image-level counters (to deal with asynchronous pixel calculations).</div>
+								<div class="description">Increment block- and image-level counters (to deal with asynchronous pixel
+    calculations).</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/Ingemi.html#zoom">zoom</a></b>(x, y)
+								</div>
+								<div class="description">Center the viewport on (x, y) and zoom in 2x.</div>
 							</td>
 						</tr>
 					
@@ -504,7 +511,7 @@ ul.inheritsList
 				</div>
 				
 				<div class="fixedFont">
-						<b>Ingemi</b>(args)
+						<b>Ingemi</b>(parentDiv, args)
 				</div>
 				
 				<div class="description">
@@ -520,15 +527,32 @@ ul.inheritsList
 						<dt class="heading">Parameters:</dt>
 						
 							<dt>
+								<span class="light fixedFont">{Node}</span>  <b>parentDiv</b>
+								
+							</dt>
+								<dd>The container where Ingemi will render.</dd>
+						
+							<dt>
 								<span class="light fixedFont">{Object}</span>  <b>args</b>
 								
 							</dt>
-								<dd>An argument object to override most defaults. Valid properties are listed below.</dd>
+								<dd>An argument object to override most defaults. Valid
+    properties are listed below.</dd>
 						
 						</dl>
 					
 					
 					
+					
+						<dl class="detailList">
+						<dt class="heading">Throws:</dt>
+						
+							<dt>
+								 <b></b>
+							</dt>
+								<dd>Error if parentDiv is not a valid <div>.</dd>
+						
+						</dl>
 					
 					
 					
@@ -551,7 +575,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Number of pixels to render concurrently. Higher values may increase performance at the cost of browser stability.
+						Number of pixels to render concurrently.
+    Higher values may increase performance at the cost of browser stability.
 						
 						
 					</div>
@@ -573,7 +598,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Maximum iteration used in escape-velocity calculations. High numbers produce greater color differentiation.
+						Maximum iteration used in escape-velocity
+    calculations. High numbers produce greater color differentiation.
 						
 						
 					</div>
@@ -595,7 +621,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Horizontal offset of the coordinate system relative to the center of the canvas. Units are the same as rangeLeft.
+						Horizontal offset of the coordinate system
+    relative to the center of the canvas. Units are the same as rangeLeft.
 						
 						
 					</div>
@@ -617,7 +644,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Vertical offset of the coordinate system relative to the center of the canvas.
+						Vertical offset of the coordinate system
+    relative to the center of the canvas.
 						
 						
 					</div>
@@ -639,7 +667,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Callback function fired every time a render is completed.
+						Callback function fired every time a render
+    is completed.
 						
 						
 					</div>
@@ -661,7 +690,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Width of coordinate system mapped to the canvas (smaller numbers produce zoom).
+						Width of coordinate system mapped to the canvas
+    (smaller numbers produce zoom).
 						
 						
 					</div>
@@ -705,7 +735,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Used to strech internal canvas dimensions for fast, low-resolution renders.
+						Used to strech internal canvas dimensions for
+    fast, low-resolution renders.
 						
 						
 					</div>
@@ -727,15 +758,16 @@ ul.inheritsList
 					Method Detail
 				</div>
 				
-					<a name="drawAxes"> </a>
+					<a name="finalize"> </a>
 					<div class="fixedFont">
 					
 					
-					<b>drawAxes</b>()
+					<b>finalize</b>()
 					
 					</div>
 					<div class="description">
-						Indicate the current frame being rendered. Not yet implemented.
+						Draw current image to canvas, unlock future rendering calls, and finally
+    call onrender
 						
 						
 					</div>
@@ -745,42 +777,6 @@ ul.inheritsList
 						
 						
 						
-						
-						
-						
-						
-
-					<hr />
-				
-					<a name="ensureParent"> </a>
-					<div class="fixedFont">
-					
-					
-					<b>ensureParent</b>()
-					
-					</div>
-					<div class="description">
-						Get and ensure the container for Ingemi. Size and position of the canvas element will be
-    determined from this element.
-						
-						
-					</div>
-					
-					
-					
-						
-						
-						
-						
-							<dl class="detailList">
-							<dt class="heading">Throws:</dt>
-							
-								<dt>
-									 <b></b>
-								</dt>
-								<dd>Error if markup doesn't contain a node with id 'ingemi'.</dd>
-							
-							</dl>
 						
 						
 						
@@ -873,6 +869,31 @@ ul.inheritsList
 
 					<hr />
 				
+					<a name="init"> </a>
+					<div class="fixedFont">
+					
+					
+					<b>init</b>()
+					
+					</div>
+					<div class="description">
+						Initialize the canvas element.
+						
+						
+					</div>
+					
+					
+					
+						
+						
+						
+						
+						
+						
+						
+
+					<hr />
+				
 					<a name="isInCartoid"> </a>
 					<div class="fixedFont">
 					
@@ -916,15 +937,15 @@ ul.inheritsList
 
 					<hr />
 				
-					<a name="logStats"> </a>
+					<a name="makeCanvas"> </a>
 					<div class="fixedFont">
 					
 					
-					<b>logStats</b>()
+					<b>makeCanvas</b>()
 					
 					</div>
 					<div class="description">
-						Log timing statistics.
+						Create a canvas in the parent div and inherit its size.
 						
 						
 					</div>
@@ -941,15 +962,16 @@ ul.inheritsList
 
 					<hr />
 				
-					<a name="makeCanvas"> </a>
+					<a name="nextBlock"> </a>
 					<div class="fixedFont">
 					
 					
-					<b>makeCanvas</b>()
+					<b>nextBlock</b>()
 					
 					</div>
 					<div class="description">
-						Create a canvas in the parent div and inherit its size.
+						Increment the global block offset, reset the block-level counter, and make
+    rendering call.
 						
 						
 					</div>
@@ -999,7 +1021,8 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Render one row asynchronously - TODO convert to static sized blocks.
+						Render one row asynchronously. Increasing blockSize can potentially
+    decrease rendering times at the expense of CPU usage.
 						
 						
 					</div>
@@ -1031,42 +1054,6 @@ ul.inheritsList
 					
 					
 					
-						
-						
-						
-						
-						
-						
-						
-
-					<hr />
-				
-					<a name="setDefaults"> </a>
-					<div class="fixedFont">
-					
-					
-					<b>setDefaults</b>(args)
-					
-					</div>
-					<div class="description">
-						
-						
-						
-					</div>
-					
-					
-					
-						
-							<dl class="detailList">
-							<dt class="heading">Parameters:</dt>
-							
-								<dt>
-									<span class="light fixedFont">{Object}</span> <b>args</b>
-									
-								</dt>
-								<dd>See class definition for valid properties of args.</dd>
-							
-							</dl>
 						
 						
 						
@@ -1171,14 +1158,56 @@ ul.inheritsList
 					
 					</div>
 					<div class="description">
-						Increment block- and image-level counters (to deal with asynchronous pixel calculations).
-    Callback to renderBlock or putImageData when appropriate.
+						Increment block- and image-level counters (to deal with asynchronous pixel
+    calculations).
 						
 						
 					</div>
 					
 					
 					
+						
+						
+						
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="zoom"> </a>
+					<div class="fixedFont">
+					
+					
+					<b>zoom</b>(x, y)
+					
+					</div>
+					<div class="description">
+						Center the viewport on (x, y) and zoom in 2x.
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<span class="light fixedFont">{Integer}</span> <b>x</b>
+									
+								</dt>
+								<dd>In pixels from the left of the canvas</dd>
+							
+								<dt>
+									<span class="light fixedFont">{Integer}</span> <b>y</b>
+									
+								</dt>
+								<dd>In pixels from the top of the canvas</dd>
+							
+							</dl>
 						
 						
 						
@@ -1201,7 +1230,7 @@ ul.inheritsList
 <!-- ============================== footer ================================= -->
 		<div class="fineprint" style="clear:both">
 			
-			Documentation generated by <a href="http://code.google.com/p/jsdoc-toolkit/" target="_blank">JsDoc Toolkit</a> 2.4.0 on Wed May 02 2012 02:16:03 GMT-0400 (EDT)
+			Documentation generated by <a href="http://code.google.com/p/jsdoc-toolkit/" target="_blank">JsDoc Toolkit</a> 2.4.0 on Wed May 02 2012 22:19:56 GMT-0400 (EDT)
 		</div>
 	</body>
 </html>
