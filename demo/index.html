@@ -19,6 +19,20 @@
             }); // Add any additional configuration here
             ingemi.init();
             ingemi.render();
+            parentDiv.addEventListener('click', function (e) {
+                ingemi.zoom(e.clientX, e.clientY, 2);
+            });
+            addEventListener('keydown', function (e) {
+                switch (e.keyCode) {
+                    case 82: // R
+                        ingemi.reset();
+                        ingemi.render();
+                        break;
+                    case 80: // P
+                        ingemi.scale(1);
+                        ingemi.render();
+                }
+            });
         </script>
     </body>
 </html>
