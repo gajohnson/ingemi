@@ -57,12 +57,13 @@
                         ingemi.upscale(ingemi.upscale_ * 2);
                         ingemi.render();
                         break;
-                    case 68: // A
+                    case 68: // D
                         ingemi.upscale(ingemi.upscale_ / 2);
                         ingemi.render();
                         break;
-
-
+                    case 90: // Z
+                        window.location = ingemi.canvas.toDataURL("image/png");
+                        break;
                 }
             });
 
