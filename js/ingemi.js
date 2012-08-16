@@ -66,6 +66,8 @@ Ingemi.prototype.makeCanvas = function () {
     this.clientHeight = this.parentDiv.clientHeight;
     this.canvas.style.width = this.clientWidth + 'px';
     this.canvas.style.height =  this.clientHeight + 'px';
+
+    this.status = document.getElementById('status');
 };
 
 /**
@@ -87,6 +89,7 @@ Ingemi.prototype.render = function () {
     if (this.lock) return;
     this.lock = true;
     console.time('render');
+    this.status.innerText = 0;
     this.renderedPixels = 0;
     this.renderedPixelsInBlock = 0;
     this.blockOffset = 0;
@@ -236,6 +239,7 @@ Ingemi.prototype.updateCounters = function () {
  */
 Ingemi.prototype.nextBlock = function () {
     this.blockOffset += this.blockSize;
+    this.status.innerText = Math.round(100 * this.blockOffset / this.totalPixels);
     this.renderedPixelsInBlock = 0;
     this.renderBlock();
 };
@@ -246,6 +250,7 @@ Ingemi.prototype.nextBlock = function () {
  */
 Ingemi.prototype.finalize = function () {
     this.context.putImageData(this.image, 0, 0);
+    this.status.innerText = 100;
     console.timeEnd('render');
     this.lock = false;
     if (this.onrender) this.onrender();
