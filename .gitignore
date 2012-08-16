@@ -1,6 +1,4 @@
 .DS_Store
-closure-compiler
-_jsdoc-toolkit
 docs
 demo/ingemi.js
 demo/ingemi.min.js
