@@ -42,6 +42,8 @@ Ingemi = function (parentDiv, args) {
 
     this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
 
+    this.forcedHeight = Math.round(parentDiv.clientWidth * 2 / 3.5) / parentDiv.clientHeight;
+
     this.lock = false;
 };
 
@@ -143,7 +145,7 @@ Ingemi.prototype.gridToLine = function (left, top) {
 Ingemi.prototype.getValue = function (left, top) {
     var scaledX, scaledY;
     scaledX = this.scale * (this.maxLeftRange * left / this.width - 1.75) + this.offsetLeft;
-    scaledY = this.scale * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
+    scaledY = this.scale / this.forcedHeight * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
 
     /** Optimize against inner cartoid and return known maxIteration */
     if (this.isInCartoid(scaledX, scaledY)) {
