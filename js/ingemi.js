@@ -181,12 +181,36 @@ Ingemi.prototype.isInCartoid = function (left, top) {
  * @param {Integer} value The value returned by getValue [0...maxIteration]
  */
 Ingemi.prototype.setPixelColor = function(pos, value) {
-    if (this.maxIteration > 255) {
-        value = Math.floor(value/this.maxIteration * 255);
+    var r, g, b;
+    value = 6 * value / this.maxIteration;
+    if (value < 1) {
+        r = 255;
+        g = value * 255;
+        b = 0;
+    } else if (value < 2) {
+        r = (2 - value) * 255;
+        g = 255;
+        b = 0;
+    } else if (value < 3) {
+        r = 0;
+        g = 255;
+        b = (value - 2) * 255;
+    } else if (value < 4) {
+        r = 0;
+        g = (4 - value) * 255;
+        b = 255;
+    } else if (value < 5) {
+        r = (value - 4) * 255;
+        g = 0;
+        b = 255;
+    } else {
+        r = 255;
+        g = 0;
+        b = (6 - value) * 255;
     }
-    this.image.data[pos] = value;
-    this.image.data[pos+1] = value;
-    this.image.data[pos+2] = value;
+    this.image.data[pos] = r;
+    this.image.data[pos+1] = g;
+    this.image.data[pos+2] = b;
     this.image.data[pos+3] = 255;
 };
 
@@ -279,11 +303,16 @@ Ingemi.prototype['render'] = Ingemi.prototype.render;
 Ingemi.prototype['zoom'] = Ingemi.prototype.zoom;
 
 /**
+ * @export Ingemi.prototype.center as window.Ingemi.prototype.center
+ */
+Ingemi.prototype['center'] = Ingemi.prototype.center;
+
+/**
  * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
  */
 Ingemi.prototype['reset'] = Ingemi.prototype.reset;
 /**
- * @export Ingemi.prototype.scale as window.Ingemi.prototype.scale
+ * @export Ingemi.prototype.upscale as window.Ingemi.prototype.upscale
  */
-Ingemi.prototype['scale'] = Ingemi.prototype.scale;
+Ingemi.prototype['upscale'] = Ingemi.prototype.upscale;
 })();
