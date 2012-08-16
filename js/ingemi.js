@@ -9,9 +9,6 @@
  *     properties are listed below.
  * @property {Integer} upscale Used to strech internal canvas dimensions for
  *     fast, low-resolution renders.
- * @property {Float} rangeLeft Width of coordinate system mapped to the canvas
- *     (smaller numbers produce zoom).
- * @property {Float} rangeTop Height of coordinate system mapped to the canvas.
  * @property {Float} offsetLeft Horizontal offset of the coordinate system
  *     relative to the center of the canvas. Units are the same as rangeLeft.
  * @property {Float} offsetTop Vertical offset of the coordinate system
@@ -29,18 +26,23 @@ Ingemi = function (parentDiv, args) {
         throw new Error('You must specify the div where Ingemi will render');
     }
     args = args || {};
+
     this.parentDiv = parentDiv;
-    this.upscale = args['upscale'] || 1;
-    this.rangeLeft = args['rangeLeft'] || 1;
-    this.rangeTop = args['rangeTop'] || 1;
+
+    this.upscale_ = args['upscale'] || 1;
+
     this.offsetLeft = args['offsetLeft'] || 0;
     this.offsetTop = args['offsetTop'] || 0;
-    this.maxIteration = args['maxIteration'] || 255;
-    this.blockSize = args['blockSize'] || 2500;
-    this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
-    this.lock = false;
     this.maxLeftRange = 3.5;
     this.maxTopRange = 2;
+    this.scale = 1;
+
+    this.maxIteration = args['maxIteration'] || 255;
+    this.blockSize = args['blockSize'] || 2500;
+
+    this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
+
+    this.lock = false;
 };
 
 /**
@@ -68,8 +70,8 @@ Ingemi.prototype.makeCanvas = function () {
  * Set the internal size of the canvas element.
  */
 Ingemi.prototype.scaleCanvas = function () {
-    this.width = Math.floor(this.clientWidth / this.upscale);
-    this.height = Math.floor(this.clientHeight / this.upscale);
+    this.width = Math.floor(this.clientWidth / this.upscale_);
+    this.height = Math.floor(this.clientHeight / this.upscale_);
     this.canvas.width = this.width;
     this.canvas.height = this.height;
     this.image = this.context.createImageData(this.width, this.height);
@@ -80,14 +82,13 @@ Ingemi.prototype.scaleCanvas = function () {
  * Render the entire scene using the current viewport and context.
  */
 Ingemi.prototype.render = function () {
-    if (!this.lock) {
-        console.time('render');
-        this.lock = true;
-        this.renderedPixels = 0;
-        this.renderedPixelsInBlock = 0;
-        this.blockOffset = 0;
-        this.renderBlock();
-    }
+    if (this.lock) return;
+    this.lock = true;
+    console.time('render');
+    this.renderedPixels = 0;
+    this.renderedPixelsInBlock = 0;
+    this.blockOffset = 0;
+    this.renderBlock();
 };
 
 /**
@@ -141,8 +142,9 @@ Ingemi.prototype.gridToLine = function (left, top) {
  */
 Ingemi.prototype.getValue = function (left, top) {
     var scaledX, scaledY;
-    scaledX = this.rangeLeft * this.maxLeftRange * left / this.width - 2.5 + this.offsetLeft;
-    scaledY = this.rangeTop * this.maxTopRange * top / this.height - 1 + this.offsetTop;
+    scaledX = this.scale * (this.maxLeftRange * left / this.width - 1.75) + this.offsetLeft;
+    scaledY = this.scale * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
+
     /** Optimize against inner cartoid and return known maxIteration */
     if (this.isInCartoid(scaledX, scaledY)) {
         return this.maxIteration;
@@ -225,35 +227,34 @@ Ingemi.prototype.finalize = function () {
 
 /**
  * Center the viewport on (x, y) and zoom in 2x.
- * @param {Integer} x In pixels from the left of the canvas
- * @param {Integer} y In pixels from the top of the canvas
  * @param {Float} factor Multiplier for zoom
  */
-Ingemi.prototype.zoom = function (x, y, factor) {
-    if (!this.lock){
-        x = x / this.upscale;
-        y = y / this.upscale;
-        var targetLeft = x / this.width - 0.5;
-        var targetTop = y / this.height - 0.5;
-        this.offsetLeft += targetLeft * this.rangeLeft * this.maxLeftRange;
-        this.offsetTop += targetTop * this.rangeTop * this.maxTopRange;
-        this.rangeLeft /= factor;
-        this.rangeTop /= factor;
-        this.offsetLeft += this.rangeLeft * this.maxLeftRange / 2;
-        this.offsetTop += this.rangeTop;
-        this.render();
-    }
+Ingemi.prototype.zoom = function (factor) {
+    if (this.lock) return;
+    this.scale = factor;
+    this.render();
+};
+
+/**
+ * Center the viewport on (x, y) and zoom in 2x.
+ * @param {Integer} x In pixels from the left of the canvas
+ * @param {Integer} y In pixels from the top of the canvas
+ */
+Ingemi.prototype.center = function (x, y) {
+    if (this.lock) return;
+    this.offsetLeft += (x / this.upscale_ / this.width - 0.5) * this.maxLeftRange * this.scale;
+    this.offsetTop += (y / this.upscale_ / this.height - 0.5) * this.maxTopRange * this.scale;
+    this.render();
 };
 
 Ingemi.prototype.reset = function () {
-    this.rangeLeft = 1;
-    this.rangeTop = 1;
     this.offsetLeft = 0;
     this.offsetTop = 0;
+    this.scale = 1;
 };
 
-Ingemi.prototype.scale = function(upscale) {
-    this.upscale = upscale;
+Ingemi.prototype.upscale = function(upscale) {
+    this.upscale_ = upscale;
     this.scaleCanvas();
 };
 

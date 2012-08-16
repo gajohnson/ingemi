@@ -25,7 +25,7 @@
             ingemi.render();
 
             parentDiv.addEventListener('click', function(e) {
-                ingemi.zoom(e.clientX, e.clientY, 1);
+                ingemi.center(e.clientX, e.clientY);
             });
 
             addEventListener('keydown', function (e) {
@@ -35,7 +35,7 @@
                         ingemi.render();
                         break;
                     case 80: // P
-                        ingemi.scale(1);
+                        ingemi.upscale(1);
                         ingemi.render();
                 }
             });
@@ -43,10 +43,10 @@
             var zoomIn = document.getElementById('zoomIn');
             var zoomOut = document.getElementById('zoomOut');
             zoomIn.addEventListener('click', function(e) {
-                ingemi.zoom(parentDiv.clientWidth/2, parentDiv.clientHeight/2, 2);
+                ingemi.zoom(ingemi.scale / 2);
             });
             zoomOut.addEventListener('click', function(e) {
-                ingemi.zoom(parentDiv.clientWidth/2, parentDiv.clientHeight/2, -2);
+                ingemi.zoom(ingemi.scale * 2);
             });
         </script>
     </body>
