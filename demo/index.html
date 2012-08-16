@@ -7,21 +7,27 @@
         <!-- Add these lines to your page -->
         <link rel='stylesheet' href='../css/ingemi.css' />
         <script type='text/javascript' src='ingemi.js'></script>
-
     </head>
     <body>
+        <div id='controlPanel'>
+            <div id='zoomOut' class='button'></div>
+            <div id='zoomIn' class='button'></div>
+        </div>
+
         <!-- Position and style this element however you see fit -->
         <div id='ingemi'></div>
         <script type='text/javascript'>
             var parentDiv = document.getElementById('ingemi');
             var ingemi = new Ingemi(parentDiv, {
-                upscale: 2
+                upscale: 8
             }); // Add any additional configuration here
             ingemi.init();
             ingemi.render();
-            parentDiv.addEventListener('click', function (e) {
-                ingemi.zoom(e.clientX, e.clientY, 2);
+
+            parentDiv.addEventListener('click', function(e) {
+                ingemi.zoom(e.clientX, e.clientY, 1);
             });
+
             addEventListener('keydown', function (e) {
                 switch (e.keyCode) {
                     case 82: // R
@@ -32,6 +38,15 @@
                         ingemi.scale(1);
                         ingemi.render();
                 }
+            });
+
+            var zoomIn = document.getElementById('zoomIn');
+            var zoomOut = document.getElementById('zoomOut');
+            zoomIn.addEventListener('click', function(e) {
+                ingemi.zoom(parentDiv.clientWidth/2, parentDiv.clientHeight/2, 2);
+            });
+            zoomOut.addEventListener('click', function(e) {
+                ingemi.zoom(parentDiv.clientWidth/2, parentDiv.clientHeight/2, -2);
             });
         </script>
     </body>

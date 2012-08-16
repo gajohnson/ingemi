@@ -81,6 +81,7 @@ Ingemi.prototype.scaleCanvas = function () {
  */
 Ingemi.prototype.render = function () {
     if (!this.lock) {
+        console.time('render');
         this.lock = true;
         this.renderedPixels = 0;
         this.renderedPixelsInBlock = 0;
@@ -217,6 +218,7 @@ Ingemi.prototype.nextBlock = function () {
  */
 Ingemi.prototype.finalize = function () {
     this.context.putImageData(this.image, 0, 0);
+    console.timeEnd('render');
     this.lock = false;
     if (this.onrender) this.onrender();
 };
