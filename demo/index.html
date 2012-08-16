@@ -62,7 +62,23 @@
                         ingemi.render();
                         break;
                     case 90: // Z
-                        window.location = ingemi.canvas.toDataURL("image/png");
+                        var displayWidth = ingemi.canvas.width;
+                        var displayHeight = ingemi.canvas.height;
+                        var options = "left=0,top=0,width=" + displayWidth +
+                            ",height=" + displayHeight +
+                            ",toolbar=0,resizable=0";
+                        var dataURL = ingemi.canvas.toDataURL("image/png");
+                        var imageWindow = window.open("", "Ingemi", options);
+                        imageWindow.document.write("<title>Ingemi Export Image</title>")
+                        imageWindow.document.write("<img id='exportImage'"
+                                                    + " alt=''"
+                                                    + " height='" + displayHeight + "'"
+                                                    + " width='"  + displayWidth  + "'"
+                                                    + " style='position:absolute;left:0;top:0'/>");
+                        imageWindow.document.close();
+                        //copy the image into the empty img in the newly opened window:
+                        var exportImage = imageWindow.document.getElementById("exportImage");
+                        exportImage.src = dataURL;
                         break;
                 }
             });
