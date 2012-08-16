@@ -37,6 +37,27 @@
                     case 80: // P
                         ingemi.upscale(1);
                         ingemi.render();
+                        break;
+                    case 79: // 0
+                        ingemi.upscale(4);
+                        ingemi.render();
+                        break;
+                    case 87: // W
+                        ingemi.zoom(ingemi.scale / 2);
+                        break;
+                    case 83: // S
+                        ingemi.zoom(ingemi.scale * 2);
+                        break;
+                    case 65: // A
+                        ingemi.upscale(ingemi.upscale_ * 2);
+                        ingemi.render();
+                        break;
+                    case 68: // A
+                        ingemi.upscale(ingemi.upscale_ / 2);
+                        ingemi.render();
+                        break;
+
+
                 }
             });
 
