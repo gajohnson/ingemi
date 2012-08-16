@@ -80,12 +80,13 @@ Ingemi.prototype.scaleCanvas = function () {
  * Render the entire scene using the current viewport and context.
  */
 Ingemi.prototype.render = function () {
-    if (this.lock) return;
-    this.lock = true;
-    this.renderedPixels = 0;
-    this.renderedPixelsInBlock = 0;
-    this.blockOffset = 0;
-    this.renderBlock();
+    if (!this.lock) {
+        this.lock = true;
+        this.renderedPixels = 0;
+        this.renderedPixelsInBlock = 0;
+        this.blockOffset = 0;
+        this.renderBlock();
+    }
 };
 
 /**
@@ -227,17 +228,19 @@ Ingemi.prototype.finalize = function () {
  * @param {Float} factor Multiplier for zoom
  */
 Ingemi.prototype.zoom = function (x, y, factor) {
-    x = x / this.upscale;
-    y = y / this.upscale;
-    var targetLeft = x / this.width - 0.5;
-    var targetTop = y / this.height - 0.5;
-    this.offsetLeft += targetLeft * this.rangeLeft * this.maxLeftRange;
-    this.offsetTop += targetTop * this.rangeTop * this.maxTopRange;
-    this.rangeLeft /= factor;
-    this.rangeTop /= factor;
-    this.offsetLeft += this.rangeLeft * this.maxLeftRange / 2;
-    this.offsetTop += this.rangeTop;
-    this.render();
+    if (!this.lock){
+        x = x / this.upscale;
+        y = y / this.upscale;
+        var targetLeft = x / this.width - 0.5;
+        var targetTop = y / this.height - 0.5;
+        this.offsetLeft += targetLeft * this.rangeLeft * this.maxLeftRange;
+        this.offsetTop += targetTop * this.rangeTop * this.maxTopRange;
+        this.rangeLeft /= factor;
+        this.rangeTop /= factor;
+        this.offsetLeft += this.rangeLeft * this.maxLeftRange / 2;
+        this.offsetTop += this.rangeTop;
+        this.render();
+    }
 };
 
 Ingemi.prototype.reset = function () {

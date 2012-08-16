@@ -2,3 +2,5 @@
 closure-compiler
 _jsdoc-toolkit
 docs
+demo/ingemi.js
+demo/ingemi.min.js
