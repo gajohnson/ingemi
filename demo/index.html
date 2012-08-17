@@ -61,6 +61,22 @@
                         ingemi.upscale(ingemi.upscale_ / 2);
                         ingemi.render();
                         break;
+                    case 37: // Left
+                        ingemi.center(0, ingemi.canvas.clientHeight / 2);
+                        ingemi.render();
+                        break;
+                    case 39: // Right
+                        ingemi.center(ingemi.canvas.clientWidth, ingemi.canvas.clientHeight / 2);
+                        ingemi.render();
+                        break;
+                    case 38: // Up
+                        ingemi.center(ingemi.canvas.clientWidth / 2, 0);
+                        ingemi.render();
+                        break;
+                    case 40: // Down
+                        ingemi.center(ingemi.canvas.clientWidth / 2, ingemi.canvas.clientHeight);
+                        ingemi.render();
+                        break;
                     case 90: // Z
                         var displayWidth = ingemi.canvas.width;
                         var displayHeight = ingemi.canvas.height;
@@ -81,6 +97,8 @@
                         exportImage.src = dataURL;
                         break;
                 }
+                e.stopPropagation();
+                e.preventDefault();
             });
 
             var zoomIn = document.getElementById('zoomIn');
