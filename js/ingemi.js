@@ -39,7 +39,7 @@ Ingemi = function(parentDiv, args) {
     this.scale = 1;
 
     this.maxIteration = args['maxIteration'] || 255;
-    this.blockSize = args['blockSize'] || 2500;
+    this.blockSize = args['blockSize'] || 2000;
 
     this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
 
