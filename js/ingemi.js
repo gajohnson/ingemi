@@ -1,4 +1,4 @@
-(function (){
+(function(){
 /**
  * Ingemi(nate) - An iterative Mandelbrot set generator in JavaScript.
  * @name Ingemi
@@ -21,7 +21,8 @@
  *     is completed.
  * @throws Error if parentDiv is not a valid <div>.
  */
-Ingemi = function (parentDiv, args) {
+
+Ingemi = function(parentDiv, args) {
     if (!parentDiv || parentDiv.nodeName != 'DIV') {
         throw new Error('You must specify the div where Ingemi will render');
     }
@@ -45,12 +46,14 @@ Ingemi = function (parentDiv, args) {
     this.forcedHeight = Math.round(parentDiv.clientWidth * 2 / 3.5) / parentDiv.clientHeight;
 
     this.lock = false;
+    this.threads = [];
+    this.smart = false;
 };
 
 /**
  * Initialize the canvas element.
  */
-Ingemi.prototype.init = function () {
+Ingemi.prototype.init = function() {
     this.makeCanvas();
     this.scaleCanvas();
 };
@@ -58,7 +61,7 @@ Ingemi.prototype.init = function () {
 /**
  * Create a canvas in the parent div and inherit its size.
  */
-Ingemi.prototype.makeCanvas = function () {
+Ingemi.prototype.makeCanvas = function() {
     this.canvas = document.createElement('canvas');
     this.parentDiv.appendChild(this.canvas);
     this.context = this.canvas.getContext('2d');
@@ -67,25 +70,28 @@ Ingemi.prototype.makeCanvas = function () {
     this.canvas.style.width = this.clientWidth + 'px';
     this.canvas.style.height =  this.clientHeight + 'px';
 
+    this.scratchCanvas = document.createElement('canvas');
+    this.scratchContext = this.scratchCanvas.getContext('2d');
+
     this.status = document.getElementById('status');
 };
 
 /**
  * Set the internal size of the canvas element.
  */
-Ingemi.prototype.scaleCanvas = function () {
+Ingemi.prototype.scaleCanvas = function() {
     this.width = Math.floor(this.clientWidth / this.upscale_);
     this.height = Math.floor(this.clientHeight / this.upscale_);
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
-    this.image = this.context.createImageData(this.width, this.height);
+    this.scratchCanvas.width = this.width;
+    this.scratchCanvas.height = this.height;
+    this.image = this.scratchContext.createImageData(this.width, this.height);
     this.totalPixels = this.width * this.height;
 };
 
 /**
  * Render the entire scene using the current viewport and context.
  */
-Ingemi.prototype.render = function () {
+Ingemi.prototype.render = function() {
     if (this.lock) return;
     this.lock = true;
     console.time('render');
@@ -100,15 +106,15 @@ Ingemi.prototype.render = function () {
  * Render one row asynchronously. Increasing blockSize can potentially
  *     decrease rendering times at the expense of CPU usage.
  */
-Ingemi.prototype.renderBlock = function () {
+Ingemi.prototype.renderBlock = function() {
     /**
      * Prevent pixel calculation beyond the total number of pixel
      * @type {Boolean}
      */
     var overSized = this.blockSize + this.blockOffset > this.totalPixels;
     var lim = overSized ? this.totalPixels - this.blockOffset : this.blockSize;
-    var i;
-    for (i = 0; i < lim; i += 1) {
+    this.threads = [];
+    for (var i = 0; i < lim; i += 1) {
         var pos = this.blockOffset + i;
         this.setPixel(pos % this.width, Math.floor(pos/this.width));
     }
@@ -120,14 +126,14 @@ Ingemi.prototype.renderBlock = function () {
  * @param {Integer} left
  * @param {Integer} top
  */
-Ingemi.prototype.setPixel = function (left, top) {
+Ingemi.prototype.setPixel = function(left, top) {
     var _this = this;
-    setTimeout(function () {
+    this.threads.push(setTimeout(function() {
         var pos = _this.gridToLine(left, top) * 4;
         var value = _this.getValue(left, top);
         _this.setPixelColor(pos, value);
         _this.updateCounters();
-    }, 0);
+    }, 0));
 };
 
 /**
@@ -135,7 +141,7 @@ Ingemi.prototype.setPixel = function (left, top) {
  * @param {Integer} left
  * @param {Integer} top
  */
-Ingemi.prototype.gridToLine = function (left, top) {
+Ingemi.prototype.gridToLine = function(left, top) {
     return top * this.width + left;
 };
 
@@ -145,7 +151,7 @@ Ingemi.prototype.gridToLine = function (left, top) {
  * @param {Integer} left
  * @param {Integer} top
  */
-Ingemi.prototype.getValue = function (left, top) {
+Ingemi.prototype.getValue = function(left, top) {
     var scaledX, scaledY;
     scaledX = this.scale * (this.maxLeftRange * left / this.width - 1.75) + this.offsetLeft;
     scaledY = this.scale / this.forcedHeight * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
@@ -173,7 +179,7 @@ Ingemi.prototype.getValue = function (left, top) {
  * @param {Float} left
  * @param {Float} top
  */
-Ingemi.prototype.isInCartoid = function (left, top) {
+Ingemi.prototype.isInCartoid = function(left, top) {
     var p = Math.pow(left - 0.25, 2) + (top * top);
     var q = Math.sqrt(p);
     return left <= q - (2 * p) + 0.25;
@@ -223,10 +229,13 @@ Ingemi.prototype.setPixelColor = function(pos, value) {
  * Increment block- and image-level counters (to deal with asynchronous pixel
  *     calculations).
  */
-Ingemi.prototype.updateCounters = function () {
+Ingemi.prototype.updateCounters = function() {
     this.renderedPixels += 1;
     this.renderedPixelsInBlock += 1;
     if (this.renderedPixels == this.totalPixels) {
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+        this.context.putImageData(this.image, 0, 0);
         this.finalize();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
         this.nextBlock();
@@ -237,7 +246,7 @@ Ingemi.prototype.updateCounters = function () {
  * Increment the global block offset, reset the block-level counter, and make
  *     rendering call.
  */
-Ingemi.prototype.nextBlock = function () {
+Ingemi.prototype.nextBlock = function() {
     this.blockOffset += this.blockSize;
     this.status.innerText = Math.round(100 * this.blockOffset / this.totalPixels);
     this.renderedPixelsInBlock = 0;
@@ -245,14 +254,18 @@ Ingemi.prototype.nextBlock = function () {
 };
 
 /**
- * Draw current image to canvas, unlock future rendering calls, and finally
+ * Update status, unlock future rendering calls, and finally
  *     call onrender.
  */
-Ingemi.prototype.finalize = function () {
-    this.context.putImageData(this.image, 0, 0);
+Ingemi.prototype.finalize = function() {
     this.status.innerText = 100;
     console.timeEnd('render');
     this.lock = false;
+    if (this.smart) {
+        this.smart = false;
+        this.upscale(1);
+        this.render();
+    }
     if (this.onrender) this.onrender();
 };
 
@@ -260,10 +273,10 @@ Ingemi.prototype.finalize = function () {
  * Center the viewport on (x, y) and zoom in 2x.
  * @param {Float} factor Multiplier for zoom
  */
-Ingemi.prototype.zoom = function (factor) {
-    if (this.lock) return;
+Ingemi.prototype.zoom = function(factor) {
+    //if (this.lock) return;
     this.scale = factor;
-    this.render();
+    this.smartRender();
 };
 
 /**
@@ -271,14 +284,14 @@ Ingemi.prototype.zoom = function (factor) {
  * @param {Integer} x In pixels from the left of the canvas
  * @param {Integer} y In pixels from the top of the canvas
  */
-Ingemi.prototype.center = function (x, y) {
-    if (this.lock) return;
+Ingemi.prototype.center = function(x, y) {
+    //if (this.lock) return;
     this.offsetLeft += (x / this.upscale_ / this.width - 0.5) * this.maxLeftRange * this.scale;
     this.offsetTop += (y / this.upscale_ / this.height - 0.5) * this.maxTopRange * this.scale;
-    this.render();
+    this.smartRender();
 };
 
-Ingemi.prototype.reset = function () {
+Ingemi.prototype.reset = function() {
     this.offsetLeft = 0;
     this.offsetTop = 0;
     this.scale = 1;
@@ -289,6 +302,19 @@ Ingemi.prototype.upscale = function(upscale) {
     this.scaleCanvas();
 };
 
+Ingemi.prototype.cancel = function() {
+    while(this.threads.length) {
+        clearTimeout(this.threads.pop());
+    }
+    this.finalize();
+};
+
+Ingemi.prototype.smartRender = function() {
+    if (this.lock) this.cancel();
+    this.smart = true;
+    this.upscale(8);
+    this.render();
+}
 /**
  * @export Ingemi as window.Ingemi
  */

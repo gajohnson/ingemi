@@ -32,8 +32,7 @@
             addEventListener('keydown', function (e) {
                 switch (e.keyCode) {
                     case 82: // R
-                        ingemi.reset();
-                        ingemi.render();
+                        ingemi.cancel();
                         break;
                     case 76: // L
                         ingemi.upscale(0.5);
@@ -63,19 +62,15 @@
                         break;
                     case 37: // Left
                         ingemi.center(0, ingemi.canvas.clientHeight / 2);
-                        ingemi.render();
                         break;
                     case 39: // Right
                         ingemi.center(ingemi.canvas.clientWidth, ingemi.canvas.clientHeight / 2);
-                        ingemi.render();
                         break;
                     case 38: // Up
                         ingemi.center(ingemi.canvas.clientWidth / 2, 0);
-                        ingemi.render();
                         break;
                     case 40: // Down
                         ingemi.center(ingemi.canvas.clientWidth / 2, ingemi.canvas.clientHeight);
-                        ingemi.render();
                         break;
                     case 90: // Z
                         var displayWidth = ingemi.canvas.width;
