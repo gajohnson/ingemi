@@ -46,8 +46,8 @@ Ingemi = function(parentDiv, args) {
     this.forcedHeight = Math.round(parentDiv.clientWidth * 2 / 3.5) / parentDiv.clientHeight;
 
     this.lock = false;
-    this.threads = [];
     this.smart = false;
+    this.threads = [];
 };
 
 /**
@@ -70,6 +70,7 @@ Ingemi.prototype.makeCanvas = function() {
     this.canvas.style.width = this.clientWidth + 'px';
     this.canvas.style.height =  this.clientHeight + 'px';
 
+    // Working canvas to avoid clearing the visible image on resize
     this.scratchCanvas = document.createElement('canvas');
     this.scratchContext = this.scratchCanvas.getContext('2d');
 
@@ -233,9 +234,7 @@ Ingemi.prototype.updateCounters = function() {
     this.renderedPixels += 1;
     this.renderedPixelsInBlock += 1;
     if (this.renderedPixels == this.totalPixels) {
-        this.canvas.width = this.width;
-        this.canvas.height = this.height;
-        this.context.putImageData(this.image, 0, 0);
+        this.draw();
         this.finalize();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
         this.nextBlock();
@@ -251,6 +250,15 @@ Ingemi.prototype.nextBlock = function() {
     this.status.innerText = Math.round(100 * this.blockOffset / this.totalPixels);
     this.renderedPixelsInBlock = 0;
     this.renderBlock();
+};
+
+/**
+ * Draw the image to the screen
+ */
+Ingemi.prototype.draw = function() {
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
+    this.context.putImageData(this.image, 0, 0);
 };
 
 /**
@@ -274,7 +282,6 @@ Ingemi.prototype.finalize = function() {
  * @param {Float} factor Multiplier for zoom
  */
 Ingemi.prototype.zoom = function(factor) {
-    //if (this.lock) return;
     this.scale = factor;
     this.smartRender();
 };
@@ -285,23 +292,32 @@ Ingemi.prototype.zoom = function(factor) {
  * @param {Integer} y In pixels from the top of the canvas
  */
 Ingemi.prototype.center = function(x, y) {
-    //if (this.lock) return;
     this.offsetLeft += (x / this.upscale_ / this.width - 0.5) * this.maxLeftRange * this.scale;
     this.offsetTop += (y / this.upscale_ / this.height - 0.5) * this.maxTopRange * this.scale;
     this.smartRender();
 };
 
+/**
+ * Reset the viewport
+ */
 Ingemi.prototype.reset = function() {
     this.offsetLeft = 0;
     this.offsetTop = 0;
     this.scale = 1;
 };
 
+/**
+ * Set scaling factor for higher or lower resolution images
+ * @param {Integer} upscale The scaling factor of the image
+ */
 Ingemi.prototype.upscale = function(upscale) {
     this.upscale_ = upscale;
     this.scaleCanvas();
 };
 
+/**
+ * Cancel any pending requests for pixels and clean up
+ */
 Ingemi.prototype.cancel = function() {
     while(this.threads.length) {
         clearTimeout(this.threads.pop());
@@ -309,12 +325,16 @@ Ingemi.prototype.cancel = function() {
     this.finalize();
 };
 
+/**
+ * Intelligently cancel and delegate rendering requests at progressively higher resolutions
+ */
 Ingemi.prototype.smartRender = function() {
     if (this.lock) this.cancel();
     this.smart = true;
     this.upscale(8);
     this.render();
-}
+};
+
 /**
  * @export Ingemi as window.Ingemi
  */
@@ -344,8 +364,10 @@ Ingemi.prototype['center'] = Ingemi.prototype.center;
  * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
  */
 Ingemi.prototype['reset'] = Ingemi.prototype.reset;
+
 /**
  * @export Ingemi.prototype.upscale as window.Ingemi.prototype.upscale
  */
 Ingemi.prototype['upscale'] = Ingemi.prototype.upscale;
+
 })();
