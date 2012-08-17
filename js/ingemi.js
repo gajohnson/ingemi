@@ -70,7 +70,7 @@ Ingemi.prototype.makeCanvas = function() {
     this.canvas.style.width = this.clientWidth + 'px';
     this.canvas.style.height =  this.clientHeight + 'px';
 
-    // Working canvas to avoid clearing the visible image on resize
+    /** Working canvas to avoid clearing the visible image on resize */
     this.scratchCanvas = document.createElement('canvas');
     this.scratchContext = this.scratchCanvas.getContext('2d');
 
@@ -253,7 +253,7 @@ Ingemi.prototype.nextBlock = function() {
 };
 
 /**
- * Draw the image to the screen
+ * Draw the final image to the screen.
  */
 Ingemi.prototype.draw = function() {
     this.canvas.width = this.width;
@@ -278,7 +278,7 @@ Ingemi.prototype.finalize = function() {
 };
 
 /**
- * Center the viewport on (x, y) and zoom in 2x.
+ * Set the zoom factor (absolute).
  * @param {Float} factor Multiplier for zoom
  */
 Ingemi.prototype.zoom = function(factor) {
@@ -287,7 +287,7 @@ Ingemi.prototype.zoom = function(factor) {
 };
 
 /**
- * Center the viewport on (x, y) and zoom in 2x.
+ * Center the viewport on (x, y).
  * @param {Integer} x In pixels from the left of the canvas
  * @param {Integer} y In pixels from the top of the canvas
  */
@@ -298,7 +298,7 @@ Ingemi.prototype.center = function(x, y) {
 };
 
 /**
- * Reset the viewport
+ * Reset the viewport: offsets and zoom.
  */
 Ingemi.prototype.reset = function() {
     this.offsetLeft = 0;
@@ -307,7 +307,7 @@ Ingemi.prototype.reset = function() {
 };
 
 /**
- * Set scaling factor for higher or lower resolution images
+ * Set scaling factor for higher or lower resolution images.
  * @param {Integer} upscale The scaling factor of the image
  */
 Ingemi.prototype.upscale = function(upscale) {
@@ -316,7 +316,7 @@ Ingemi.prototype.upscale = function(upscale) {
 };
 
 /**
- * Cancel any pending requests for pixels and clean up
+ * Cancel any pending requests for pixels and clean up.
  */
 Ingemi.prototype.cancel = function() {
     while(this.threads.length) {
@@ -326,7 +326,7 @@ Ingemi.prototype.cancel = function() {
 };
 
 /**
- * Intelligently cancel and delegate rendering requests at progressively higher resolutions
+ * Intelligently cancel and delegate rendering requests at progressively higher resolutions.
  */
 Ingemi.prototype.smartRender = function() {
     if (this.lock) this.cancel();
