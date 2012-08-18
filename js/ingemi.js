@@ -12,7 +12,8 @@
  * @property {Float} offsetLeft Horizontal offset of the coordinate system
  *     relative to the center of the canvas. Units are the same as rangeLeft.
  * @property {Float} offsetTop Vertical offset of the coordinate system
- *     relative to the center of the canvas.
+ *     relative to the center of the canvas
+ * @property {Float} minStdDev Minimum threshold standard deviation in random images.
  * @property {Integer} maxIteration Maximum iteration used in escape-velocity
  *     calculations. High numbers produce greater color differentiation.
  * @property {Integer} blockSize Number of pixels to render concurrently.
@@ -37,6 +38,7 @@ Ingemi = function(parentDiv, args) {
     this.maxLeftRange = 3.5;
     this.maxTopRange = 2;
     this.scale = 1;
+    this.minStdDev = args['minStdDev'] || 10;
 
     this.maxIteration = args['maxIteration'] || 255;
     this.blockSize = args['blockSize'] || 2000;
@@ -374,7 +376,8 @@ Ingemi.prototype.random = function() {
             top = Math.floor(Math.floor(i / 4) * this.height/4);
             points.push(this.getValue(left, top));
         }
-    } while (stddev(points, average(points)) < this.maxIteration / 8);
+    } while (stddev(points, average(points)) < this.minStdDev);
+    console.log(stddev(points, average(points)));
     this.smartRender();
 };
 
