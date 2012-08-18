@@ -75,6 +75,9 @@ Ingemi.prototype.makeCanvas = function() {
     this.scratchContext = this.scratchCanvas.getContext('2d');
 
     this.status = document.getElementById('status');
+    this.statusX = document.getElementById('x');
+    this.statusY= document.getElementById('y');
+    this.statusZ = document.getElementById('z');
 };
 
 /**
@@ -97,6 +100,9 @@ Ingemi.prototype.render = function() {
     this.lock = true;
     console.time('render');
     this.status.innerText = 0;
+    this.statusX.innerText = this.offsetLeft;
+    this.statusY.innerText = this.offsetTop;
+    this.statusZ.innerText = Math.log(1 / this.scale) / Math.LN2;
     this.renderedPixels = 0;
     this.renderedPixelsInBlock = 0;
     this.blockOffset = 0;
@@ -268,11 +274,13 @@ Ingemi.prototype.draw = function() {
 Ingemi.prototype.finalize = function() {
     this.status.innerText = 100;
     console.timeEnd('render');
-    this.lock = false;
     if (this.smart) {
         this.smart = false;
         this.upscale(1);
+        this.lock = false;
         this.render();
+    } else {
+        this.lock = false;
     }
     if (this.onrender) this.onrender();
 };
@@ -336,6 +344,64 @@ Ingemi.prototype.smartRender = function() {
 };
 
 /**
+ * Generate a random image
+ */
+Ingemi.prototype.random = function() {
+    var points, left, top;
+    var average = function(array) {
+        var sum = 0, l = array.length;
+        for(var i = 0; i < l; i++) {
+            sum += array[i];
+        }
+        return sum / l;
+    };
+    var stddev = function(array, average) {
+        var l = array.length;
+        var sum = 0;
+        for(var i = 0; i < l; i++) {
+            var x = array[i] - average;
+            sum += x * x;
+        }
+        return Math.pow(sum / l, 0.5);
+    };
+    do {
+        points = [];
+        this.scale = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
+        this.offsetLeft = this.maxLeftRange * (Math.random() - 0.5);
+        this.offsetTop = this.maxTopRange * (Math.random() - 0.5);
+        for(var i = 0; i < 16; i++) {
+            left = Math.floor((i%4) * this.width/4);
+            top = Math.floor(Math.floor(i / 4) * this.height/4);
+            points.push(this.getValue(left, top));
+        }
+    } while (stddev(points, average(points)) < this.maxIteration / 8);
+    this.smartRender();
+};
+
+/**
+ * Export the current view to PNG
+ */
+Ingemi.prototype.save = function() {
+    var displayWidth = this.canvas.width;
+    var displayHeight = this.canvas.height;
+    var options = "left=0,top=0,width=" + displayWidth +
+        ",height=" + displayHeight +
+        ",toolbar=0,resizable=0";
+    var dataURL = this.canvas.toDataURL("image/png");
+    var imageWindow = window.open("", "Ingemi", options);
+    imageWindow.document.write("<title>Ingemi Export Image</title>")
+    imageWindow.document.write("<img id='exportImage'"
+                                + " alt=''"
+                                + " height='" + displayHeight + "'"
+                                + " width='"  + displayWidth  + "'"
+                                + " style='position:absolute;left:0;top:0'/>");
+    imageWindow.document.close();
+    //copy the image into the empty img in the newly opened window:
+    var exportImage = imageWindow.document.getElementById("exportImage");
+    exportImage.src = dataURL;
+};
+
+/**
  * @export Ingemi as window.Ingemi
  */
 window['Ingemi'] = Ingemi;
@@ -364,6 +430,16 @@ Ingemi.prototype['center'] = Ingemi.prototype.center;
  * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
  */
 Ingemi.prototype['reset'] = Ingemi.prototype.reset;
+
+/**
+ * @export Ingemi.prototype.random as window.Ingemi.prototype.random
+ */
+Ingemi.prototype['random'] = Ingemi.prototype.random;
+
+/**
+ * @export Ingemi.prototype.save as window.Ingemi.prototype.save
+ */
+Ingemi.prototype['save'] = Ingemi.prototype.save;
 
 /**
  * @export Ingemi.prototype.upscale as window.Ingemi.prototype.upscale

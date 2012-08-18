@@ -12,7 +12,10 @@
         <div id='controlPanel'>
             <div id='zoomOut' class='button'>-</div>
             <div id='zoomIn' class='button'>+</div>
-            <span id='status' class='button'></span>
+            <span class='button'>%: <span id='status'></span></span>
+            <span class='button'>X: <span id='x'></span></span>
+            <span class='button'>Y: <span id='y'></span></span>
+            <span class='button'>Zoom: <span id='z'></span></span>
         </div>
 
         <!-- Position and style this element however you see fit -->
@@ -32,7 +35,7 @@
             addEventListener('keydown', function (e) {
                 switch (e.keyCode) {
                     case 82: // R
-                        ingemi.reset();
+                        ingemi.random();
                         break;
                     case 76: // L
                         ingemi.upscale(0.5);
@@ -73,27 +76,11 @@
                         ingemi.center(ingemi.canvas.clientWidth / 2, ingemi.canvas.clientHeight);
                         break;
                     case 90: // Z
-                        var displayWidth = ingemi.canvas.width;
-                        var displayHeight = ingemi.canvas.height;
-                        var options = "left=0,top=0,width=" + displayWidth +
-                            ",height=" + displayHeight +
-                            ",toolbar=0,resizable=0";
-                        var dataURL = ingemi.canvas.toDataURL("image/png");
-                        var imageWindow = window.open("", "Ingemi", options);
-                        imageWindow.document.write("<title>Ingemi Export Image</title>")
-                        imageWindow.document.write("<img id='exportImage'"
-                                                    + " alt=''"
-                                                    + " height='" + displayHeight + "'"
-                                                    + " width='"  + displayWidth  + "'"
-                                                    + " style='position:absolute;left:0;top:0'/>");
-                        imageWindow.document.close();
-                        //copy the image into the empty img in the newly opened window:
-                        var exportImage = imageWindow.document.getElementById("exportImage");
-                        exportImage.src = dataURL;
+                        ingemi.save();
                         break;
                 }
-                e.stopPropagation();
-                e.preventDefault();
+                //e.stopPropagation();
+                //e.preventDefault();
             });
 
             var zoomIn = document.getElementById('zoomIn');
