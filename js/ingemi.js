@@ -435,6 +435,11 @@ Ingemi.prototype['center'] = Ingemi.prototype.center;
 Ingemi.prototype['reset'] = Ingemi.prototype.reset;
 
 /**
+ * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
+ */
+Ingemi.prototype['smartRender'] = Ingemi.prototype.smartRender;
+
+/**
  * @export Ingemi.prototype.random as window.Ingemi.prototype.random
  */
 Ingemi.prototype['random'] = Ingemi.prototype.random;
