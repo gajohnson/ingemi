@@ -7,6 +7,7 @@
  * @param {Node} parentDiv The container where Ingemi will render.
  * @param {Object} args An argument object to override most defaults. Valid
  *     properties are listed below.
+ * @property {Integer} test Flag to run in test mode.
  * @property {Integer} upscale Used to strech internal canvas dimensions for
  *     fast, low-resolution renders.
  * @property {Float} offsetLeft Horizontal offset of the coordinate system
@@ -31,6 +32,8 @@ Ingemi = function(parentDiv, args) {
 
     this.parentDiv = parentDiv;
 
+    this.test = args['test'] || false;
+
     this.upscale_ = args['upscale'] || 1;
 
     this.offsetLeft = args['offsetLeft'] || 0;
@@ -40,16 +43,17 @@ Ingemi = function(parentDiv, args) {
     this.scale = 1;
     this.minStdDev = args['minStdDev'] || 10;
 
-    this.maxIteration = args['maxIteration'] || 255;
+    this.maxIteration = args['maxIteration'] || 2000;
     this.blockSize = args['blockSize'] || 2000;
 
     this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
 
-    this.forcedHeight = Math.round(parentDiv.clientWidth * 2 / 3.5) / parentDiv.clientHeight;
+    this.forcedHeight = Math.round(parentDiv.clientWidth * this.maxTopRange / this.maxLeftRange) / parentDiv.clientHeight;
 
     this.lock = false;
     this.smart = false;
     this.threads = [];
+    this.valueCache = [];
 };
 
 /**
@@ -72,7 +76,7 @@ Ingemi.prototype.makeCanvas = function() {
     this.canvas.style.width = this.clientWidth + 'px';
     this.canvas.style.height =  this.clientHeight + 'px';
 
-    /** Working canvas to avoid clearing the visible image on resize */
+    /** Working canvas to avoid clearing the visible image on resample */
     this.scratchCanvas = document.createElement('canvas');
     this.scratchContext = this.scratchCanvas.getContext('2d');
 
@@ -86,8 +90,8 @@ Ingemi.prototype.makeCanvas = function() {
  * Set the internal size of the canvas element.
  */
 Ingemi.prototype.scaleCanvas = function() {
-    this.width = Math.floor(this.clientWidth / this.upscale_);
-    this.height = Math.floor(this.clientHeight / this.upscale_);
+    this.width = Math.floor(this.clientWidth / this.upscale());
+    this.height = Math.floor(this.clientHeight / this.upscale());
     this.scratchCanvas.width = this.width;
     this.scratchCanvas.height = this.height;
     this.image = this.scratchContext.createImageData(this.width, this.height);
@@ -100,7 +104,9 @@ Ingemi.prototype.scaleCanvas = function() {
 Ingemi.prototype.render = function() {
     if (this.lock) return;
     this.lock = true;
-    console.time('render');
+    this.cancelled = false;
+    if (this.test) console.time('render');
+    this.cacheXY();
     this.status.innerText = 0;
     this.statusX.innerText = this.offsetLeft;
     this.statusY.innerText = this.offsetTop;
@@ -112,20 +118,48 @@ Ingemi.prototype.render = function() {
 };
 
 /**
+ * Intelligently cancel and delegate rendering requests at progressively higher resolutions.
+ */
+Ingemi.prototype.smartRender = function() {
+    if (this.lock) this.cancel();
+    this.smart = true;
+    this.upscale(1);
+    this.render();
+};
+
+/**
+ * Cancel any pending requests for pixels and clean up.
+ */
+Ingemi.prototype.cancel = function() {
+    this.cancelled = true;
+    this.smart = false;
+    while(this.threads.length) {
+        clearTimeout(this.threads.pop());
+    }
+    this.scratchCanvas.width = this.width;
+    this.finalize();
+    this.test = false;
+};
+
+/**
  * Render one row asynchronously. Increasing blockSize can potentially
  *     decrease rendering times at the expense of CPU usage.
  */
 Ingemi.prototype.renderBlock = function() {
-    /**
-     * Prevent pixel calculation beyond the total number of pixel
-     * @type {Boolean}
-     */
-    var overSized = this.blockSize + this.blockOffset > this.totalPixels;
-    var lim = overSized ? this.totalPixels - this.blockOffset : this.blockSize;
+    var lim = this.blockSize + this.blockOffset > this.totalPixels ? this.totalPixels - this.blockOffset : this.blockSize;
     this.threads = [];
+    var _this = this;
+    var setPixel = function(left, top) {
+        _this.threads.push(setTimeout(function() {
+            var pos = _this.gridToLine(left, top) * 4;
+            var value = _this.getValue(left, top);
+            _this.setPixelColor(pos, value);
+            _this.updateCounters();
+        }, 1));
+    };
     for (var i = 0; i < lim; i += 1) {
         var pos = this.blockOffset + i;
-        this.setPixel(pos % this.width, Math.floor(pos/this.width));
+        setPixel(pos % this.width, Math.floor(pos/this.width));
     }
 };
 
@@ -136,13 +170,8 @@ Ingemi.prototype.renderBlock = function() {
  * @param {Integer} top
  */
 Ingemi.prototype.setPixel = function(left, top) {
-    var _this = this;
-    this.threads.push(setTimeout(function() {
-        var pos = _this.gridToLine(left, top) * 4;
-        var value = _this.getValue(left, top);
-        _this.setPixelColor(pos, value);
-        _this.updateCounters();
-    }, 0));
+   
+
 };
 
 /**
@@ -162,8 +191,12 @@ Ingemi.prototype.gridToLine = function(left, top) {
  */
 Ingemi.prototype.getValue = function(left, top) {
     var scaledX, scaledY;
-    scaledX = this.scale * (this.maxLeftRange * left / this.width - 1.75) + this.offsetLeft;
-    scaledY = this.scale / this.forcedHeight * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
+
+    //scaledX = this.scale * (this.maxLeftRange * left / this.width - 1.75) + this.offsetLeft;
+    scaledX = this.cacheX1 * left + this.cacheX2;
+
+    //scaledY = this.scale / this.forcedHeight * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
+    scaledY = this.cacheY1 * top + this.cacheY2;
 
     /** Optimize against inner cartoid and return known maxIteration */
     if (this.isInCartoid(scaledX, scaledY)) {
@@ -177,11 +210,17 @@ Ingemi.prototype.getValue = function(left, top) {
         xtemp = x*x - y*y + scaledX;
         y = 2*x*y + scaledY;
         x = xtemp;
-        iteration += 1;
+        iteration++;
     }
     return iteration;
 };
 
+Ingemi.prototype.cacheXY = function() {
+    this.cacheX1 = this.scale * this.maxLeftRange / this.width;
+    this.cacheX2 = this.offsetLeft - this.scale * this.maxLeftRange / 2;
+    this.cacheY1 = (this.scale * this.maxTopRange) / (this.forcedHeight * this.height);
+    this.cacheY2 = this.offsetTop - (this.scale / this.forcedHeight);
+};
 /**
  * Simple optimization to prevent computing to maximum iteration in the center
  *     of the unzoomed Mandelbrot set.
@@ -198,35 +237,38 @@ Ingemi.prototype.isInCartoid = function(left, top) {
  * Map an integer [0...maxIteration] into some rgb spectrum
  *     and write it to the imageData array.
  * @param {Integer} pos The linear position of the pixel being modified
- * @param {Integer} value The value returned by getValue [0...maxIteration]
+ * @param {Integer} value The value returned by getValue [1...maxIteration]
  */
 Ingemi.prototype.setPixelColor = function(pos, value) {
     var r, g, b;
-    value = 6 * value / this.maxIteration;
-    if (value < 1) {
+    var v = this.valueCache[value];
+    if (!v){
+        v = this.valueCache[value] = 6 - 6 * value / this.maxIteration;
+    }
+    if (v < 1) {
         r = 255;
-        g = value * 255;
+        g = v * 255;
         b = 0;
-    } else if (value < 2) {
-        r = (2 - value) * 255;
+    } else if (v < 2) {
+        r = (2 - v) * 255;
         g = 255;
         b = 0;
-    } else if (value < 3) {
+    } else if (v < 3) {
         r = 0;
         g = 255;
-        b = (value - 2) * 255;
-    } else if (value < 4) {
+        b = (v - 2) * 255;
+    } else if (v < 4) {
         r = 0;
-        g = (4 - value) * 255;
+        g = (4 - v) * 255;
         b = 255;
-    } else if (value < 5) {
-        r = (value - 4) * 255;
+    } else if (v < 5) {
+        r = (v - 4) * 255;
         g = 0;
         b = 255;
     } else {
         r = 255;
         g = 0;
-        b = (6 - value) * 255;
+        b = (6 - v) * 255;
     }
     this.image.data[pos] = r;
     this.image.data[pos+1] = g;
@@ -275,14 +317,31 @@ Ingemi.prototype.draw = function() {
  */
 Ingemi.prototype.finalize = function() {
     this.status.innerText = 100;
-    console.timeEnd('render');
+    if (this.test) console.timeEnd('render');
     if (this.smart) {
-        this.smart = false;
-        this.upscale(1);
+        if (this.test) {
+            this.lock = false;
+            return this.random();
+        }
+        switch (this.upscale()) {
+            case 1:
+                //this.smart = false;
+                this.upscale(0.5);
+                break;
+            case 2:
+                //this.smart = false;
+                this.upscale(1);
+                break;
+            default:
+                this.smart = false;
+                this.upscale(2);
+                break;
+        }
         this.lock = false;
         this.render();
     } else {
         this.lock = false;
+        if(this.test) this.random();
     }
     if (this.onrender) this.onrender();
 };
@@ -302,8 +361,8 @@ Ingemi.prototype.zoom = function(factor) {
  * @param {Integer} y In pixels from the top of the canvas
  */
 Ingemi.prototype.center = function(x, y) {
-    this.offsetLeft += (x / this.upscale_ / this.width - 0.5) * this.maxLeftRange * this.scale;
-    this.offsetTop += (y / this.upscale_ / this.height - 0.5) * this.maxTopRange * this.scale;
+    this.offsetLeft += (x / this.upscale() / this.width - 0.5) * this.maxLeftRange * this.scale;
+    this.offsetTop += (y / this.upscale() / this.height - 0.5) * this.maxTopRange * this.scale;
     this.smartRender();
 };
 
@@ -321,28 +380,9 @@ Ingemi.prototype.reset = function() {
  * @param {Integer} upscale The scaling factor of the image
  */
 Ingemi.prototype.upscale = function(upscale) {
+    if (!upscale) return this.upscale_;
     this.upscale_ = upscale;
     this.scaleCanvas();
-};
-
-/**
- * Cancel any pending requests for pixels and clean up.
- */
-Ingemi.prototype.cancel = function() {
-    while(this.threads.length) {
-        clearTimeout(this.threads.pop());
-    }
-    this.finalize();
-};
-
-/**
- * Intelligently cancel and delegate rendering requests at progressively higher resolutions.
- */
-Ingemi.prototype.smartRender = function() {
-    if (this.lock) this.cancel();
-    this.smart = true;
-    this.upscale(8);
-    this.render();
 };
 
 /**
@@ -371,13 +411,13 @@ Ingemi.prototype.random = function() {
         this.scale = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
         this.offsetLeft = this.maxLeftRange * (Math.random() - 0.5);
         this.offsetTop = this.maxTopRange * (Math.random() - 0.5);
+        this.cacheXY();
         for(var i = 0; i < 16; i++) {
             left = Math.floor((i%4) * this.width/4);
             top = Math.floor(Math.floor(i / 4) * this.height/4);
             points.push(this.getValue(left, top));
         }
     } while (stddev(points, average(points)) < this.minStdDev);
-    console.log(stddev(points, average(points)));
     this.smartRender();
 };
 
@@ -433,6 +473,11 @@ Ingemi.prototype['center'] = Ingemi.prototype.center;
  * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
  */
 Ingemi.prototype['reset'] = Ingemi.prototype.reset;
+
+/**
+ * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
+ */
+Ingemi.prototype['smartRender'] = Ingemi.prototype.smartRender;
 
 /**
  * @export Ingemi.prototype.random as window.Ingemi.prototype.random
