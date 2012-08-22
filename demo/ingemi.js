@@ -48,14 +48,6 @@ Ingemi = function(parentDiv, args) {
     this.forcedHeight = Math.round(parentDiv.clientWidth * this.maxTopRange / this.maxLeftRange) / parentDiv.clientHeight;
 
     this.lock = false;
-    this.smart = false;
-    
-    this.timer = null;
-    this.quickSample = 2;
-
-    //this.threads = new Uint16Array(this.blockSize);
-    //this.thread = 0;
-    //console.log(this.threads.length);
 };
 
 /**
@@ -87,10 +79,10 @@ Ingemi.prototype.makeCanvas = function() {
     this.statusY= document.getElementById('y');
     this.statusZ = document.getElementById('z');
 
-    var _this = this;
+    /*var _this = this;
     this.statusUpdate = setInterval(function(){
         _this.status.innerText = Math.round(100 * _this.blockOffset / _this.totalPixels);
-    }, 1000);
+    }, 1000);*/
 };
 
 /**
@@ -109,11 +101,18 @@ Ingemi.prototype.scaleCanvas = function() {
  * Render the entire scene using the current viewport and context.
  */
 Ingemi.prototype.render = function() {
+    var _this = this;
+    setTimeout(function(){
+        _this._render();
+    }, 0);
+};
+/**
+ * Render the entire scene using the current viewport and context.
+ */
+Ingemi.prototype._render = function() {
     if (this.lock) return;
     this.lock = true;
-    this.cancelled = false;
     console.time('render');
-    this.timer = new Date().getTime();
     this.status.innerText = 0;
     this.statusX.innerText = this.offsetLeft;
     this.statusY.innerText = this.offsetTop;
@@ -125,37 +124,10 @@ Ingemi.prototype.render = function() {
 };
 
 /**
- * Intelligently cancel and delegate rendering requests at progressively higher resolutions.
- */
-Ingemi.prototype.smartRender = function() {
-    if (this.lock) this.cancel();
-    this.smart = true;
-    this.upscale(this.quickSample);
-    console.log('cancel');
-    var _this = this;
-    setTimeout(function() {
-        try {
-            _this.render();
-        } catch (e) {
-            console.log('caught');
-        }
-    }, 0);
-};
-
-/**
  * Cancel any pending requests for pixels and clean up.
  */
 Ingemi.prototype.cancel = function() {
-    throw new Error('Cancel');
-    /*this.smart = false;
-    var i, l = this.threads.length;
-    for(i = 0; i < l; i++) {
-        clearTimeout(this.threads[i]);
-        //i++;
-    }
-    this.cancelled = true;
-    this.scratchCanvas.width = this.width;
-    this.finalize();*/
+
 };
 
 /**
@@ -164,16 +136,6 @@ Ingemi.prototype.cancel = function() {
  */
 Ingemi.prototype.renderBlock = function() {
     var lim = this.blockSize + this.blockOffset > this.totalPixels ? this.totalPixels - this.blockOffset : this.blockSize;
-    //this.threads = [];
-    //var _this = this;
-/*    var setPixel = function(left, top) {
-        _this.threads[_this.thread++] = setTimeout(function() {
-            var pos = (top * _this.width + left) * 4;
-            var value = _this.getValue(left, top);
-            _this.setPixelColor(pos, value);
-            _this.updateCounters();
-        });
-    };*/
     var i;
     for(i = 0; i < lim; i++) {
         var pos = this.blockOffset + i;
@@ -182,7 +144,6 @@ Ingemi.prototype.renderBlock = function() {
         var value = this.getValue(left, top);
         this.setPixelColor(pos, value);
         this.updateCounters();
-        //i++;
     }
 };
 
@@ -210,7 +171,6 @@ Ingemi.prototype.getValue = function(left, top) {
         xtemp = x*x - y*y + scaledX;
         y = 2*x*y + scaledY;
         x = xtemp;
-        //iteration++;
     }
     return iteration;
 };
@@ -277,7 +237,6 @@ Ingemi.prototype.updateCounters = function() {
         this.draw();
         this.finalize();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
-        //this.thread = 0;
         this.nextBlock();
     }
 };
@@ -309,34 +268,7 @@ Ingemi.prototype.finalize = function() {
     this.status.innerText = 100;
     
     console.timeEnd('render');
-
-    //var dt = new Date().getTime() - this.timer;
-    //if (dt > 1000) this.quickSample += 2;
-    //else if (dt < 300) this.quickSample -= 2;
-
-    if (this.smart) {
-        switch (this.upscale()) {
-            case 1:
-                this.smart = false;
-                this.upscale(0.5);
-                break;
-            case 2:
-                //this.smart = false;
-                this.upscale(1);
-                break;
-            default:
-                //this.smart = false;
-                this.upscale(1);
-                break;
-        }
-        this.lock = false;
-        var _this = this;
-        setTimeout(function() {
-            _this.render();
-        }, 0);
-    } else {
-        this.lock = false;
-    }
+    this.lock = false;
     if (this.onrender) this.onrender();
 };
 
@@ -346,7 +278,7 @@ Ingemi.prototype.finalize = function() {
  */
 Ingemi.prototype.zoom = function(factor) {
     this.scale = factor;
-    this.smartRender();
+    this.render();
 };
 
 /**
@@ -357,7 +289,7 @@ Ingemi.prototype.zoom = function(factor) {
 Ingemi.prototype.center = function(x, y) {
     this.offsetLeft += (x / this.upscale() / this.width - 0.5) * this.maxLeftRange * this.scale;
     this.offsetTop += (y / this.upscale() / this.height - 0.5) * this.maxTopRange * this.scale;
-    this.smartRender();
+    this.render();
 };
 
 /**
@@ -412,7 +344,7 @@ Ingemi.prototype.random = function() {
         }
         i++;
     } while (stddev(points, average(points)) < this.minStdDev && i < max);
-    this.smartRender();
+    this.render();
 };
 
 /**
@@ -467,11 +399,6 @@ Ingemi.prototype['center'] = Ingemi.prototype.center;
  * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
  */
 Ingemi.prototype['reset'] = Ingemi.prototype.reset;
-
-/**
- * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
- */
-Ingemi.prototype['smartRender'] = Ingemi.prototype.smartRender;
 
 /**
  * @export Ingemi.prototype.random as window.Ingemi.prototype.random

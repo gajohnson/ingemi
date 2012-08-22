@@ -23,10 +23,10 @@
         <script type='text/javascript'>
             var parentDiv = document.getElementById('ingemi');
             var ingemi = new Ingemi(parentDiv, {
-                upscale: 4
+                //upscale: 4
             }); // Add any additional configuration here
             ingemi.init();
-            ingemi.smartRender();
+            ingemi.render();
 
             parentDiv.addEventListener('click', function(e) {
                 ingemi.center(e.clientX, e.clientY);
