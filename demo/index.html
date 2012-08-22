@@ -23,8 +23,7 @@
         <script type='text/javascript'>
             var parentDiv = document.getElementById('ingemi');
             var ingemi = new Ingemi(parentDiv, {
-                upscale: 4,
-                test: true
+                upscale: 4
             }); // Add any additional configuration here
             ingemi.init();
             ingemi.smartRender();
@@ -78,6 +77,14 @@
                         break;
                     case 90: // Z
                         ingemi.save();
+                        break;
+                    case 84: // T
+                        ingemi.test = true;
+                        ingemi.render();
+                        break;
+                    case 27: // ESC
+                        ingemi.test = false;
+                        ingemi.cancel();
                         break;
                 }
                 //e.stopPropagation();

@@ -7,7 +7,6 @@
  * @param {Node} parentDiv The container where Ingemi will render.
  * @param {Object} args An argument object to override most defaults. Valid
  *     properties are listed below.
- * @property {Integer} test Flag to run in test mode.
  * @property {Integer} upscale Used to strech internal canvas dimensions for
  *     fast, low-resolution renders.
  * @property {Float} offsetLeft Horizontal offset of the coordinate system
@@ -32,8 +31,6 @@ Ingemi = function(parentDiv, args) {
 
     this.parentDiv = parentDiv;
 
-    this.test = args['test'] || false;
-
     this.upscale_ = args['upscale'] || 1;
 
     this.offsetLeft = args['offsetLeft'] || 0;
@@ -43,7 +40,7 @@ Ingemi = function(parentDiv, args) {
     this.scale = 1;
     this.minStdDev = args['minStdDev'] || 10;
 
-    this.maxIteration = args['maxIteration'] || 2000;
+    this.maxIteration = args['maxIteration'] || 600;
     this.blockSize = args['blockSize'] || 2000;
 
     this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
@@ -52,8 +49,13 @@ Ingemi = function(parentDiv, args) {
 
     this.lock = false;
     this.smart = false;
-    this.threads = [];
-    this.valueCache = [];
+    
+    this.timer = null;
+    this.quickSample = 6;
+
+    this.threads = new Uint16Array(this.blockSize);
+    this.thread = 0;
+    console.log(this.threads.length);
 };
 
 /**
@@ -84,6 +86,11 @@ Ingemi.prototype.makeCanvas = function() {
     this.statusX = document.getElementById('x');
     this.statusY= document.getElementById('y');
     this.statusZ = document.getElementById('z');
+
+    var _this = this;
+    this.statusUpdate = setInterval(function(){
+        _this.status.innerText = Math.round(100 * _this.blockOffset / _this.totalPixels);
+    }, 1000);
 };
 
 /**
@@ -105,8 +112,8 @@ Ingemi.prototype.render = function() {
     if (this.lock) return;
     this.lock = true;
     this.cancelled = false;
-    if (this.test) console.time('render');
-    this.cacheXY();
+    console.time('render');
+    this.timer = new Date().getTime();
     this.status.innerText = 0;
     this.statusX.innerText = this.offsetLeft;
     this.statusY.innerText = this.offsetTop;
@@ -123,7 +130,8 @@ Ingemi.prototype.render = function() {
 Ingemi.prototype.smartRender = function() {
     if (this.lock) this.cancel();
     this.smart = true;
-    this.upscale(1);
+    this.upscale(this.quickSample);
+    console.log('cancel');
     this.render();
 };
 
@@ -131,14 +139,15 @@ Ingemi.prototype.smartRender = function() {
  * Cancel any pending requests for pixels and clean up.
  */
 Ingemi.prototype.cancel = function() {
-    this.cancelled = true;
     this.smart = false;
-    while(this.threads.length) {
-        clearTimeout(this.threads.pop());
+    var i = 0, l = this.threads.length;
+    while(i < this.threads.length) {
+        clearTimeout(this.threads[i]);
+        i++;
     }
+    this.cancelled = true;
     this.scratchCanvas.width = this.width;
     this.finalize();
-    this.test = false;
 };
 
 /**
@@ -150,28 +159,19 @@ Ingemi.prototype.renderBlock = function() {
     this.threads = [];
     var _this = this;
     var setPixel = function(left, top) {
-        _this.threads.push(setTimeout(function() {
+        _this.threads[_this.thread++] = setTimeout(function() {
             var pos = _this.gridToLine(left, top) * 4;
             var value = _this.getValue(left, top);
             _this.setPixelColor(pos, value);
             _this.updateCounters();
-        }, 1));
+        });
     };
-    for (var i = 0; i < lim; i += 1) {
+    var i = 0;
+    while (i < lim) {
         var pos = this.blockOffset + i;
         setPixel(pos % this.width, Math.floor(pos/this.width));
+        i++;
     }
-};
-
-/**
- * Asynchronously determine and set the value for the specified pixel
- *     and internally check if we are done rendering either a block or image.
- * @param {Integer} left
- * @param {Integer} top
- */
-Ingemi.prototype.setPixel = function(left, top) {
-   
-
 };
 
 /**
@@ -192,11 +192,8 @@ Ingemi.prototype.gridToLine = function(left, top) {
 Ingemi.prototype.getValue = function(left, top) {
     var scaledX, scaledY;
 
-    //scaledX = this.scale * (this.maxLeftRange * left / this.width - 1.75) + this.offsetLeft;
-    scaledX = this.cacheX1 * left + this.cacheX2;
-
-    //scaledY = this.scale / this.forcedHeight * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
-    scaledY = this.cacheY1 * top + this.cacheY2;
+    scaledX = this.scale * (this.maxLeftRange * left / this.width - 1.75) + this.offsetLeft;
+    scaledY = this.scale / this.forcedHeight * (this.maxTopRange * top / this.height - 1) + this.offsetTop;
 
     /** Optimize against inner cartoid and return known maxIteration */
     if (this.isInCartoid(scaledX, scaledY)) {
@@ -215,12 +212,6 @@ Ingemi.prototype.getValue = function(left, top) {
     return iteration;
 };
 
-Ingemi.prototype.cacheXY = function() {
-    this.cacheX1 = this.scale * this.maxLeftRange / this.width;
-    this.cacheX2 = this.offsetLeft - this.scale * this.maxLeftRange / 2;
-    this.cacheY1 = (this.scale * this.maxTopRange) / (this.forcedHeight * this.height);
-    this.cacheY2 = this.offsetTop - (this.scale / this.forcedHeight);
-};
 /**
  * Simple optimization to prevent computing to maximum iteration in the center
  *     of the unzoomed Mandelbrot set.
@@ -241,34 +232,31 @@ Ingemi.prototype.isInCartoid = function(left, top) {
  */
 Ingemi.prototype.setPixelColor = function(pos, value) {
     var r, g, b;
-    var v = this.valueCache[value];
-    if (!v){
-        v = this.valueCache[value] = 6 - 6 * value / this.maxIteration;
-    }
-    if (v < 1) {
+    value = 6 * value / this.maxIteration;
+    if (value < 1) {
         r = 255;
-        g = v * 255;
+        g = value * 255;
         b = 0;
-    } else if (v < 2) {
-        r = (2 - v) * 255;
+    } else if (value < 2) {
+        r = (2 - value) * 255;
         g = 255;
         b = 0;
-    } else if (v < 3) {
+    } else if (value < 3) {
         r = 0;
         g = 255;
-        b = (v - 2) * 255;
-    } else if (v < 4) {
+        b = (value - 2) * 255;
+    } else if (value < 4) {
         r = 0;
-        g = (4 - v) * 255;
+        g = (4 - value) * 255;
         b = 255;
-    } else if (v < 5) {
-        r = (v - 4) * 255;
+    } else if (value < 5) {
+        r = (value - 4) * 255;
         g = 0;
         b = 255;
     } else {
         r = 255;
         g = 0;
-        b = (6 - v) * 255;
+        b = (6 - value) * 255;
     }
     this.image.data[pos] = r;
     this.image.data[pos+1] = g;
@@ -287,6 +275,7 @@ Ingemi.prototype.updateCounters = function() {
         this.draw();
         this.finalize();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
+        this.thread = 0;
         this.nextBlock();
     }
 };
@@ -297,7 +286,6 @@ Ingemi.prototype.updateCounters = function() {
  */
 Ingemi.prototype.nextBlock = function() {
     this.blockOffset += this.blockSize;
-    this.status.innerText = Math.round(100 * this.blockOffset / this.totalPixels);
     this.renderedPixelsInBlock = 0;
     this.renderBlock();
 };
@@ -317,15 +305,17 @@ Ingemi.prototype.draw = function() {
  */
 Ingemi.prototype.finalize = function() {
     this.status.innerText = 100;
-    if (this.test) console.timeEnd('render');
+    
+    console.timeEnd('render');
+
+    //var dt = new Date().getTime() - this.timer;
+    //if (dt > 1000) this.quickSample += 2;
+    //else if (dt < 300) this.quickSample -= 2;
+
     if (this.smart) {
-        if (this.test) {
-            this.lock = false;
-            return this.random();
-        }
         switch (this.upscale()) {
             case 1:
-                //this.smart = false;
+                this.smart = false;
                 this.upscale(0.5);
                 break;
             case 2:
@@ -333,7 +323,7 @@ Ingemi.prototype.finalize = function() {
                 this.upscale(1);
                 break;
             default:
-                this.smart = false;
+                //this.smart = false;
                 this.upscale(2);
                 break;
         }
@@ -341,7 +331,6 @@ Ingemi.prototype.finalize = function() {
         this.render();
     } else {
         this.lock = false;
-        if(this.test) this.random();
     }
     if (this.onrender) this.onrender();
 };
@@ -389,7 +378,7 @@ Ingemi.prototype.upscale = function(upscale) {
  * Generate a random image
  */
 Ingemi.prototype.random = function() {
-    var points, left, top;
+    var points, left, top, max = 100, i = 0;
     var average = function(array) {
         var sum = 0, l = array.length;
         for(var i = 0; i < l; i++) {
@@ -411,13 +400,13 @@ Ingemi.prototype.random = function() {
         this.scale = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
         this.offsetLeft = this.maxLeftRange * (Math.random() - 0.5);
         this.offsetTop = this.maxTopRange * (Math.random() - 0.5);
-        this.cacheXY();
         for(var i = 0; i < 16; i++) {
             left = Math.floor((i%4) * this.width/4);
             top = Math.floor(Math.floor(i / 4) * this.height/4);
             points.push(this.getValue(left, top));
         }
-    } while (stddev(points, average(points)) < this.minStdDev);
+        i++;
+    } while (stddev(points, average(points)) < this.minStdDev && i < max);
     this.smartRender();
 };
 
