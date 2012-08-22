@@ -40,7 +40,7 @@ Ingemi = function(parentDiv, args) {
     this.scale = 1;
     this.minStdDev = args['minStdDev'] || 10;
 
-    this.maxIteration = args['maxIteration'] || 600;
+    this.maxIteration = args['maxIteration'] || 255;
     this.blockSize = args['blockSize'] || 2000;
 
     this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
@@ -51,11 +51,11 @@ Ingemi = function(parentDiv, args) {
     this.smart = false;
     
     this.timer = null;
-    this.quickSample = 6;
+    this.quickSample = 2;
 
-    this.threads = new Uint16Array(this.blockSize);
-    this.thread = 0;
-    console.log(this.threads.length);
+    //this.threads = new Uint16Array(this.blockSize);
+    //this.thread = 0;
+    //console.log(this.threads.length);
 };
 
 /**
@@ -132,22 +132,30 @@ Ingemi.prototype.smartRender = function() {
     this.smart = true;
     this.upscale(this.quickSample);
     console.log('cancel');
-    this.render();
+    var _this = this;
+    setTimeout(function() {
+        try {
+            _this.render();
+        } catch (e) {
+            console.log('caught');
+        }
+    }, 0);
 };
 
 /**
  * Cancel any pending requests for pixels and clean up.
  */
 Ingemi.prototype.cancel = function() {
-    this.smart = false;
-    var i = 0, l = this.threads.length;
-    while(i < this.threads.length) {
+    throw new Error('Cancel');
+    /*this.smart = false;
+    var i, l = this.threads.length;
+    for(i = 0; i < l; i++) {
         clearTimeout(this.threads[i]);
-        i++;
+        //i++;
     }
     this.cancelled = true;
     this.scratchCanvas.width = this.width;
-    this.finalize();
+    this.finalize();*/
 };
 
 /**
@@ -156,31 +164,26 @@ Ingemi.prototype.cancel = function() {
  */
 Ingemi.prototype.renderBlock = function() {
     var lim = this.blockSize + this.blockOffset > this.totalPixels ? this.totalPixels - this.blockOffset : this.blockSize;
-    this.threads = [];
-    var _this = this;
-    var setPixel = function(left, top) {
+    //this.threads = [];
+    //var _this = this;
+/*    var setPixel = function(left, top) {
         _this.threads[_this.thread++] = setTimeout(function() {
-            var pos = _this.gridToLine(left, top) * 4;
+            var pos = (top * _this.width + left) * 4;
             var value = _this.getValue(left, top);
             _this.setPixelColor(pos, value);
             _this.updateCounters();
         });
-    };
-    var i = 0;
-    while (i < lim) {
+    };*/
+    var i;
+    for(i = 0; i < lim; i++) {
         var pos = this.blockOffset + i;
-        setPixel(pos % this.width, Math.floor(pos/this.width));
-        i++;
+        var left = pos % this.width, top = Math.floor(pos/this.width);
+        var pos = (top * this.width + left) * 4;
+        var value = this.getValue(left, top);
+        this.setPixelColor(pos, value);
+        this.updateCounters();
+        //i++;
     }
-};
-
-/**
- * Convert cartesian coordinates to a one-dimensional index.
- * @param {Integer} left
- * @param {Integer} top
- */
-Ingemi.prototype.gridToLine = function(left, top) {
-    return top * this.width + left;
 };
 
 /**
@@ -201,13 +204,13 @@ Ingemi.prototype.getValue = function(left, top) {
     }
     var x = 0;
     var y = 0;
-    var iteration = 0;
+    var iteration;
     var xtemp;
-    while (x*x + y*y < 4 && iteration < this.maxIteration) {
+    for(iteration = 0; x*x + y*y < 4 && iteration < this.maxIteration; iteration++) {
         xtemp = x*x - y*y + scaledX;
         y = 2*x*y + scaledY;
         x = xtemp;
-        iteration++;
+        //iteration++;
     }
     return iteration;
 };
@@ -219,9 +222,8 @@ Ingemi.prototype.getValue = function(left, top) {
  * @param {Float} top
  */
 Ingemi.prototype.isInCartoid = function(left, top) {
-    var p = Math.pow(left - 0.25, 2) + (top * top);
-    var q = Math.sqrt(p);
-    return left <= q - (2 * p) + 0.25;
+    var p = (left - 0.25) * (left - 0.25) + (top * top);
+    return left <= Math.sqrt(p) - (2 * p) + 0.25;
 };
 
 /**
@@ -275,7 +277,7 @@ Ingemi.prototype.updateCounters = function() {
         this.draw();
         this.finalize();
     } else if (this.renderedPixelsInBlock === this.blockSize) {
-        this.thread = 0;
+        //this.thread = 0;
         this.nextBlock();
     }
 };
@@ -324,11 +326,14 @@ Ingemi.prototype.finalize = function() {
                 break;
             default:
                 //this.smart = false;
-                this.upscale(2);
+                this.upscale(1);
                 break;
         }
         this.lock = false;
-        this.render();
+        var _this = this;
+        setTimeout(function() {
+            _this.render();
+        }, 0);
     } else {
         this.lock = false;
     }
