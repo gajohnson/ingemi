@@ -164,17 +164,6 @@ Ingemi.prototype.renderBlock = function() {
 };
 
 /**
- * Asynchronously determine and set the value for the specified pixel
- *     and internally check if we are done rendering either a block or image.
- * @param {Integer} left
- * @param {Integer} top
- */
-Ingemi.prototype.setPixel = function(left, top) {
-   
-
-};
-
-/**
  * Convert cartesian coordinates to a one-dimensional index.
  * @param {Integer} left
  * @param {Integer} top
