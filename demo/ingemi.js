@@ -350,23 +350,28 @@ Ingemi.prototype.random = function() {
 /**
  * Export the current view to PNG
  */
-Ingemi.prototype.save = function() {
+Ingemi.prototype.save = function(inplace) {
+    var exportImage;
     var displayWidth = this.canvas.width;
     var displayHeight = this.canvas.height;
-    var options = "left=0,top=0,width=" + displayWidth +
-        ",height=" + displayHeight +
-        ",toolbar=0,resizable=0";
     var dataURL = this.canvas.toDataURL("image/png");
-    var imageWindow = window.open("", "Ingemi", options);
-    imageWindow.document.write("<title>Ingemi Export Image</title>")
-    imageWindow.document.write("<img id='exportImage'"
-                                + " alt=''"
-                                + " height='" + displayHeight + "'"
-                                + " width='"  + displayWidth  + "'"
-                                + " style='position:absolute;left:0;top:0'/>");
-    imageWindow.document.close();
-    //copy the image into the empty img in the newly opened window:
-    var exportImage = imageWindow.document.getElementById("exportImage");
+    if (inplace) {
+
+    } else {
+        var options = "left=0,top=0,width=" + displayWidth +
+            ",height=" + displayHeight +
+            ",toolbar=0,resizable=0";
+        var imageWindow = window.open("", "Ingemi", options);
+        imageWindow.document.write("<title>Ingemi Export Image</title>")
+        imageWindow.document.write("<img id='exportImage'"
+                                    + " alt=''"
+                                    + " height='" + displayHeight + "'"
+                                    + " width='"  + displayWidth  + "'"
+                                    + " style='position:absolute;left:0;top:0'/>");
+        imageWindow.document.close();
+        //copy the image into the empty img in the newly opened window:
+        exportImage = imageWindow.document.getElementById("exportImage");
+    }
     exportImage.src = dataURL;
 };
 
