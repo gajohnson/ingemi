@@ -68,10 +68,7 @@ var setPixelColor = function(pos, value) {
         g = 0;
         b = (6 - value) * 255;
     }
-    imagedata[pos] = (255   << 24) | (b << 16) | (g <<  8) | r;
-    //imagedata[pos+1] = g;
-    //imagedata[pos+2] = b;
-    //imagedata[pos+3] = 255;
+    imagedata[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
 };
 
 self.onmessage = function(event) {
