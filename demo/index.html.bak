@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Ingemi Demo</title>
+        <link rel='stylesheet' href='styles.css' />
+
+        <!-- Add these lines to your page -->
+        <link rel='stylesheet' href='../css/ingemi.css' />
+        <script type='text/javascript' src='ingemi.js'></script>
+    </head>
+    <body>
+        <div id='controlPanel'>
+            <div id='zoomOut' class='button'>-</div>
+            <div id='zoomIn' class='button'>+</div>
+            <span class='button'><span id='status'></span>%</span>
+            <span class='button'>X: <span id='x'></span></span>
+            <span class='button'>Y: <span id='y'></span></span>
+            <span class='button'>Zoom: <span id='z'></span></span>
+        </div>
+
+        <!-- Position and style this element however you see fit -->
+        <div id='ingemi'></div>
+        <script type='text/javascript'>
+            var parentDiv = document.getElementById('ingemi');
+            var ingemi = new Ingemi(parentDiv, {
+                //upscale: 4
+            }); // Add any additional configuration here
+            ingemi.init();
+            ingemi.render();
+
+            parentDiv.addEventListener('click', function(e) {
+                ingemi.center(e.clientX, e.clientY);
+            });
+
+            addEventListener('keydown', function (e) {
+                switch (e.keyCode) {
+                    case 82: // R
+                        ingemi.random();
+                        break;
+                    case 76: // L
+                        ingemi.upscale(0.5);
+                        ingemi.render();
+                        break;
+                    case 80: // P
+                        ingemi.upscale(1);
+                        ingemi.render();
+                        break;
+                    case 79: // 0
+                        ingemi.upscale(4);
+                        ingemi.render();
+                        break;
+                    case 87: // W
+                        ingemi.zoom(ingemi.scale / 2);
+                        break;
+                    case 83: // S
+                        ingemi.zoom(ingemi.scale * 2);
+                        break;
+                    case 65: // A
+                        ingemi.upscale(ingemi.upscale_ * 2);
+                        ingemi.render();
+                        break;
+                    case 68: // D
+                        ingemi.upscale(ingemi.upscale_ / 2);
+                        ingemi.render();
+                        break;
+                    case 37: // Left
+                        ingemi.center(0, ingemi.canvas.clientHeight / 2);
+                        break;
+                    case 39: // Right
+                        ingemi.center(ingemi.canvas.clientWidth, ingemi.canvas.clientHeight / 2);
+                        break;
+                    case 38: // Up
+                        ingemi.center(ingemi.canvas.clientWidth / 2, 0);
+                        break;
+                    case 40: // Down
+                        ingemi.center(ingemi.canvas.clientWidth / 2, ingemi.canvas.clientHeight);
+                        break;
+                    case 90: // Z
+                        ingemi.save();
+                        break;
+                    case 84: // T
+                        ingemi.test = true;
+                        ingemi.render();
+                        break;
+                    case 27: // ESC
+                        ingemi.test = false;
+                        ingemi.cancel();
+                        break;
+                }
+                //e.stopPropagation();
+                //e.preventDefault();
+            });
+
+            var zoomIn = document.getElementById('zoomIn');
+            var zoomOut = document.getElementById('zoomOut');
+            zoomIn.addEventListener('click', function(e) {
+                ingemi.zoom(ingemi.scale / 2);
+            });
+            zoomOut.addEventListener('click', function(e) {
+                ingemi.zoom(ingemi.scale * 2);
+            });
+        </script>
+    </body>
+</html>

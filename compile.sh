@@ -1,12 +1,12 @@
 #!/bin/bash
 
-cp js/ingemi.js demo/ingemi.js
+cp js/ww-ingemi.js demo/ww-ingemi.js
 
 echo "Generating documentation ..."
 
 cd _jsdoc-toolkit
 
-java -jar jsrun.jar app/run.js -a -t=templates/jsdoc ../js/ingemi.js && \
+java -jar jsrun.jar app/run.js -a -t=templates/jsdoc ../js/ww-ingemi.js && \
 rm -rf ../docs && \
 mkdir ../docs && \
 mv ./out/jsdoc/* ../docs/ && \
@@ -18,7 +18,7 @@ echo "Compiling javascript ..."
 
 cd closure-compiler
 
-cp ../js/ingemi.js ./ingemi.js && \
+cp ../js/ww-ingemi.js ./ingemi.js && \
 java -jar compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js ingemi.js --js_output_file ingemi.min.js && \
 rm ingemi.js
 mv ingemi.min.js ../demo/
