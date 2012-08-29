@@ -43,7 +43,7 @@ Ingemi.prototype.init = function() {
     _this.scaleCanvas();
     for (var i = 0; i < _this.workers; i++) {
         _this.threads[i].onmessage = function(event) {
-            var buffer = event.data.imagedata;
+            var buffer = event.data['imagedata'];
             var imagedata = new Uint8ClampedArray(buffer, 0, _this.totalPixels * 4);
             _this.imagedata = _this.context.createImageData(_this.width, _this.height);
             _this.imagedata.data.set(imagedata);
@@ -84,25 +84,23 @@ Ingemi.prototype.render = function() {
     console.time('render');
     this.blockOffset = 0;
     var d = this.imagedata.data.buffer;
-    this.threads[0].postMessage({
-        state: {
-            offsetLeft: this.offsetLeft,
-            offsetTop: this.offsetTop,
-            zoom: this.zoom,
-            blockOffset: this.blockOffset
-        },
-        settings: {
-            dx: this.dx,
-            dy: this.dy,
-            forcedHeight: this.forcedHeight,
-            blockSize: this.blockSize,
-            totalPixels: this.totalPixels,
-            width: this.width,
-            height: this.height,
-            maxIteration: this.maxIteration
-        },
-        buffer: d
-    }, [d]);
+    var msg = {};
+    msg['state'] = {};
+    msg['state']['offsetLeft'] = this.offsetLeft;
+    msg['state']['offsetTop'] = this.offsetTop;
+    msg['state']['zoom'] = this.zoom;
+    msg['state']['blockOffset'] = this.blockOffset;
+    msg['settings'] = {};
+    msg['settings']['dx'] = this.dx;
+    msg['settings']['dy'] = this.dy;
+    msg['settings']['forcedHeight'] = this.forcedHeight;
+    msg['settings']['blockSize'] = this.blockSize;
+    msg['settings']['totalPixels'] = this.totalPixels;
+    msg['settings']['width'] = this.width;
+    msg['settings']['height'] = this.height;
+    msg['settings']['maxIteration'] = this.maxIteration;
+    msg['buffer'] = d;
+    this.threads[0]['postMessage'](msg, [d]);
 };
 
 /**
@@ -220,5 +218,20 @@ Ingemi.prototype.save = function(inplace) {
     }
     exportImage.src = dataURL;
 };
+
+/**
+ * @export Ingemi as window.Ingemi
+ */
+window['Ingemi'] = Ingemi;
+
+/**
+ * @export Ingemi.prototype.init as window.Ingemi.prototype.init
+ */
+Ingemi.prototype['init'] = Ingemi.prototype.init;
+
+/**
+ * @export Ingemi.prototype.render as window.Ingemi.prototype.render
+ */
+Ingemi.prototype['render'] = Ingemi.prototype.render;
 
 })();

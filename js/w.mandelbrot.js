@@ -75,27 +75,29 @@ var setPixelColor = function(pos, value) {
 };
 
 self.onmessage = function(event) {
-    offsetLeft = event.data.state.offsetLeft;
-    offsetTop = event.data.state.offsetTop;
-    zoom = event.data.state.zoom;
-    blockOffset = event.data.state.blockOffset;
+    var state = event['data']['state'];
+    var settings = event['data']['settings'];
+    offsetLeft = state['offsetLeft'];
+    offsetTop = state['offsetTop'];
+    zoom = state['zoom'];
+    blockOffset = state['blockOffset'];
 
-    dx = event.data.settings.dx;
-    dy = event.data.settings.dy;
-    forcedHeight = event.data.settings.forcedHeight;
-    blockSize = event.data.settings.totalPixels;
-    totalPixels = event.data.settings.totalPixels;
-    width = event.data.settings.width;
-    height = event.data.settings.height;
-    maxIteration = event.data.settings.maxIteration;
+    dx = settings['dx'];
+    dy = settings['dy'];
+    forcedHeight = settings['forcedHeight'];
+    blockSize = settings['totalPixels'];
+    totalPixels = settings['totalPixels'];
+    width = settings['width'];
+    height = settings['height'];
+    maxIteration = settings['maxIteration'];
 
-    var buffer = event.data.buffer;
+    var buffer = event['data']['buffer'];
     imagedata = new Uint32Array(buffer, 0, totalPixels);
 
     renderBlock();
 
-    self.webkitPostMessage({
-        imagedata: buffer,
-        blockOffset: blockOffset
-    }, [buffer]);
+    var msg = {};
+    msg['imagedata'] = buffer;
+    msg['blockOffset'] = blockOffset;
+    self['webkitPostMessage'](msg, [buffer]);
 };
