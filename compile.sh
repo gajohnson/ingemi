@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cp js/ingemi.js demo/ingemi.js
+cp js/ingemi.js ~/Sites/ingemi/ingemi.js
 
 echo "Generating documentation ..."
 
@@ -21,6 +21,6 @@ cd closure-compiler
 cp ../js/ingemi.js ./ingemi.js && \
 java -jar compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js ingemi.js --js_output_file ingemi.min.js && \
 rm ingemi.js
-mv ingemi.min.js ../demo/
+mv ingemi.min.js ~/Sites/ingemi/
 
 echo "Ingemi compiled successfully"
