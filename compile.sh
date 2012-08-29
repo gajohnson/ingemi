@@ -23,4 +23,9 @@ java -jar compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js ingemi.js
 rm ingemi.js
 mv ingemi.min.js ~/Sites/ingemi/
 
+cp ../js/w.mandelbrot.js ./w.mandelbrot.js && \
+java -jar compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js w.mandelbrot.js --js_output_file w.mandelbrot.js && \
+rm w.mandelbrot.js
+mv w.mandelbrot.js ~/Sites/ingemi/
+
 echo "Ingemi compiled successfully"
