@@ -19,7 +19,7 @@ Ingemi = function(container, args) {
     this.zoom = 1;
     this.minStdDev = args['minStdDev'] || 10;
 
-    this.maxIteration = args['maxIteration'] || 255;
+    this.maxIteration = args['maxIteration'] || 2550;
     this.blockSize = args['blockSize'] || 2000;
 
     this.forcedHeight = Math.round(container.clientWidth * this.dy / this.dx) / container.clientHeight;
