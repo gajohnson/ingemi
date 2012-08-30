@@ -1,4 +1,4 @@
-var offsetLeft, offsetTop, zoom, blockOffset;
+var x, y, z, blockOffset;
 var dx, dy, forcedHeight, blockSize, totalPixels, width, height, maxIteration, imagedata;
 
 var renderBlock = function() {
@@ -16,21 +16,21 @@ var renderBlock = function() {
 var getValue = function(left, top) {
     var scaledX, scaledY;
 
-    scaledX = zoom * (dx * left / width - 1.75) + offsetLeft;
-    scaledY = zoom / forcedHeight * (dy * top / height - 1) + offsetTop;
+    scaledX = z * (dx * left / width - 1.75) + x;
+    scaledY = z / forcedHeight * (dy * top / height - 1) + y;
 
     /** Optimize against inner cartoid and return known maxIteration */
     if (isInCartoid(scaledX, scaledY)) {
         return maxIteration;
     }
-    var x = 0;
-    var y = 0;
+    var _x = 0;
+    var _y = 0;
     var iteration;
     var xtemp;
-    for(iteration = 0; x*x + y*y < 4 && iteration < maxIteration; iteration++) {
-        xtemp = x*x - y*y + scaledX;
-        y = 2*x*y + scaledY;
-        x = xtemp;
+    for(iteration = 0; _x*_x + _y*_y < 4 && iteration < maxIteration; iteration++) {
+        xtemp = _x*_x - _y*_y + scaledX;
+        _y = 2*_x*_y + scaledY;
+        _x = xtemp;
     }
     return iteration;
 };
@@ -74,9 +74,9 @@ var setPixelColor = function(pos, value) {
 self.onmessage = function(event) {
     var state = event['data']['state'];
     var settings = event['data']['settings'];
-    offsetLeft = state['offsetLeft'];
-    offsetTop = state['offsetTop'];
-    zoom = state['zoom'];
+    x = state['x'];
+    y = state['y'];
+    z = state['z'];
     blockOffset = state['blockOffset'];
 
     dx = settings['dx'];

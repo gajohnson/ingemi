@@ -1,34 +1,68 @@
 (function(){
 
+/**
+ * Ingemi(nate) - Mandelbrot set generator.
+ * @name Ingemi
+ * @class Ingemi
+ * @constructor
+ * @param {Node} container The container where Ingemi will render.
+ * @param {Object} args An argument object to override most defaults. Valid
+ *     properties are listed below.
+ * @property {Float} x Horizontal offset of the coordinate system
+ *     relative to the center of the canvas. Units are the same as rangeLeft.
+ * @property {Float} y Vertical offset of the coordinate system
+ *     relative to the center of the canvas.
+ * @property {Float} z Magnification level.
+ * @property {Number} maxIteration Maximum iteration used in escape-velocity
+ *     calculations. High numbers produce greater color differentiation.
+ * @property {Float} sample Used to strech and compress internal canvas dimensions.
+ * @property {Number} workers Number of threads to use.
+ * @property {Float} minStdDev Minimum threshold standard deviation in random images.
+ * @property {Function} onrender Callback function fired every time a render
+ *     is completed.
+ * @throws Error if container is not a valid <div>.
+ */
 Ingemi = function(container, args) {
     if (!container || container.nodeName != 'DIV') {
         throw new Error('You must specify Ingemi\'s container');
     }
+
     args = args || {};
 
     this.container = container;
 
-    this.sample = 1;
+    this.x = args['x'] || 0;
+    this.y = args['y'] || 0;
+    this.z = args['z'] || 1;
+    this.maxIteration = args['maxIteration'] || 255;
 
-    this.offsetLeft = args['offsetLeft'] || 0;
-    this.offsetTop = args['offsetTop'] || 0;
-    this.zoom = args['zoom'] || 1;
+    this.sample = args['sample'] || 1;
+
+    this.workers = args['workers'] || 1;
+    this.minStdDev = args['minStdDev'] || 10;
+    this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
 
     this.dx = 3.5;
     this.dy = 2;
-    this.zoom = 1;
-    this.minStdDev = args['minStdDev'] || 10;
+    this.blockSize = 0;
+    this.blockOffset = 0;
 
-    this.maxIteration = args['maxIteration'] || 255;
-    this.blockSize = args['blockSize'] || 2000;
-
-    this.forcedHeight = Math.round(container.clientWidth * this.dy / this.dx) / container.clientHeight;
-
-    this.workers = args['workers'] || 1;
     this.threads = [];
     for (var i = 0; i < this.workers; i++) {
         this.threads.push(new Worker('w.mandelbrot.js'));
     }
+
+    this.canvas = null;
+    this.context = null;
+    this.imagedata = null;
+
+    this.clientWidth = 0;
+    this.clientHeight = 0;
+    this.forcedHeight = 0;
+
+    this.width = 0;
+    this.height = 0;
+    this.totalPixels = 0;
 
     this.lock = false;
 };
@@ -38,11 +72,16 @@ Ingemi = function(container, args) {
  */
 Ingemi.prototype.init = function() {
     console.time('total');
+
     var _this = this;
+
     _this.makeCanvas();
     _this.scaleCanvas();
+
     for (var i = 0; i < _this.workers; i++) {
         _this.threads[i].onmessage = function(event) {
+
+            // TODO Break this out and generalize to multiple threads
             var buffer = event.data['imagedata'];
             var imagedata = new Uint8ClampedArray(buffer, 0, _this.totalPixels * 4);
             _this.imagedata = _this.context.createImageData(_this.width, _this.height);
@@ -67,11 +106,13 @@ Ingemi.prototype.makeCanvas = function() {
 Ingemi.prototype.scaleCanvas = function() {
     this.clientWidth = this.container.clientWidth;
     this.clientHeight = this.container.clientHeight;
-    this.width = Math.floor(this.clientWidth / this.upscale());
-    this.height = Math.floor(this.clientHeight / this.upscale());
+    this.width = Math.floor(this.clientWidth / this.sample);
+    this.height = Math.floor(this.clientHeight / this.sample);
     this.canvas.style.width = this.clientWidth + 'px';
     this.canvas.style.height =  this.clientHeight + 'px';
+    this.forcedHeight = Math.round(this.clientWidth * this.dy / this.dx) / this.clientHeight;
     this.totalPixels = this.width * this.height;
+    this.blockSize = this.totalPixels / this.workers;
     this.imagedata = this.context.createImageData(this.width, this.height);
 
     //this.buffer = new ArrayBuffer(this.totalPixels * 4);
@@ -86,9 +127,9 @@ Ingemi.prototype.render = function() {
     var d = this.imagedata.data.buffer;
     var msg = {};
     msg['state'] = {};
-    msg['state']['offsetLeft'] = this.offsetLeft;
-    msg['state']['offsetTop'] = this.offsetTop;
-    msg['state']['zoom'] = this.zoom;
+    msg['state']['x'] = this.x;
+    msg['state']['y'] = this.y;
+    msg['state']['z'] = this.z;
     msg['state']['blockOffset'] = this.blockOffset;
     msg['settings'] = {};
     msg['settings']['dx'] = this.dx;
@@ -121,7 +162,7 @@ Ingemi.prototype.draw = function() {
  * @param {Float} factor Multiplier for zoom
  */
 Ingemi.prototype.zoom = function(factor) {
-    this.zoom = factor;
+    this.z = factor;
     this.render();
 };
 
@@ -131,8 +172,8 @@ Ingemi.prototype.zoom = function(factor) {
  * @param {Integer} y In pixels from the top of the canvas
  */
 Ingemi.prototype.center = function(x, y) {
-    this.offsetLeft += (x / this.upscale() / this.width - 0.5) * this.dx * this.zoom;
-    this.offsetTop += (y / this.upscale() / this.height - 0.5) * this.dy * this.zoom;
+    this.x += (x / this.sample / this.width - 0.5) * this.dx * this.z;
+    this.y += (y / this.sample / this.height - 0.5) * this.dy * this.z;
     this.render();
 };
 
@@ -140,19 +181,9 @@ Ingemi.prototype.center = function(x, y) {
  * Reset the viewport: offsets and zoom.
  */
 Ingemi.prototype.reset = function() {
-    this.offsetLeft = 0;
-    this.offsetTop = 0;
-    this.zoom = 1;
-};
-
-/**
- * Set scaling factor for higher or lower resolution images.
- * @param {Integer} upscale The scaling factor of the image
- */
-Ingemi.prototype.upscale = function(sample) {
-    if (!sample) return this.sample;
-    this.sample = sample;
-    this.scaleCanvas();
+    this.x = 0;
+    this.y = 0;
+    this.z = 1;
 };
 
 /**
@@ -176,18 +207,21 @@ Ingemi.prototype.random = function() {
         }
         return Math.pow(sum / l, 0.5);
     };
-    do {
+/*    do {
         points = [];
-        this.zoom = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
-        this.offsetLeft = this.dx * (Math.random() - 0.5);
-        this.offsetTop = this.dy * (Math.random() - 0.5);
+        this.z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
+        this.x = this.dx * (Math.random() - 0.5);
+        this.y = this.dy * (Math.random() - 0.5);
         for(var i = 0; i < 16; i++) {
             left = Math.floor((i%4) * this.width/4);
             top = Math.floor(Math.floor(i / 4) * this.height/4);
             points.push(this.getValue(left, top));
         }
         i++;
-    } while (stddev(points, average(points)) < this.minStdDev && i < max);
+    } while (stddev(points, average(points)) < this.minStdDev && i < max);*/
+    this.z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
+    this.x = this.dx * (Math.random() - 0.5);
+    this.y = this.dy * (Math.random() - 0.5);
     this.render();
 };
 
@@ -233,5 +267,10 @@ Ingemi.prototype['init'] = Ingemi.prototype.init;
  * @export Ingemi.prototype.render as window.Ingemi.prototype.render
  */
 Ingemi.prototype['render'] = Ingemi.prototype.render;
+
+/**
+ * @export Ingemi.prototype.random as window.Ingemi.prototype.random
+ */
+Ingemi.prototype['random'] = Ingemi.prototype.random;
 
 })();

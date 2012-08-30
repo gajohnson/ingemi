@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ "$1" == debug ]; then
+cp ./js/ingemi.js ~/Sites/ingemi/
+cp ./js/w.mandelbrot.js ~/Sites/ingemi/
+else
 echo "Compiling javascript ..."
 
 cd closure-compiler
@@ -15,8 +19,8 @@ rm w.mandelbrot.js
 mv w.mandelbrot.min.js ~/Sites/ingemi/w.mandelbrot.js
 
 echo "Ingemi compiled successfully"
-
 cd ..
+fi
 
 echo "Staging remaning files"
 
