@@ -38,3 +38,5 @@ mv ./out/jsdoc/* ../docs/ && \
 rm -rf ./out
 
 cd ..
+
+cp -r ~/Sites/ingemi/* ./demo/
