@@ -82,6 +82,10 @@ Ingemi.prototype.init = function() {
         _this.threads[i].onmessage = function(event) {
 
             // TODO Break this out and generalize to multiple threads
+            _this.x = event.data['x'] || _this.x;
+            _this.y = event.data['y'] || _this.y;
+            _this.z = event.data['z'] || _this.z;
+
             var buffer = event.data['imagedata'];
             var imagedata = new Uint8ClampedArray(buffer, 0, _this.totalPixels * 4);
             _this.imagedata = _this.context.createImageData(_this.width, _this.height);
@@ -122,13 +126,20 @@ Ingemi.prototype.scaleCanvas = function() {
  * Render the entire scene using the current viewport and context.
  */
 Ingemi.prototype.render = function() {
+    if (this.lock) return;
+    this.lock = true;
     console.time('render');
     this.blockOffset = 0;
-    var d = this.imagedata.data.buffer;
-    var msg = {};
-    var state = msg['state'] = {};
-    var settings = msg['settings'] = {};
+    var r = this.makeRequestObject('render');
+    this.threads[0]['postMessage'](r, [this.imagedata.data.buffer]);
+};
 
+Ingemi.prototype.makeRequestObject = function(type) {
+    var r = {};
+    r['type'] = type;
+
+    var state = r['state'] = {};
+    var settings = r['settings'] = {};
     state['x'] = this.x;
     state['y'] = this.y;
     state['z'] = this.z;
@@ -141,8 +152,9 @@ Ingemi.prototype.render = function() {
     settings['width'] = this.width;
     settings['height'] = this.height;
     settings['maxIteration'] = this.maxIteration;
-    msg['buffer'] = d;
-    this.threads[0]['postMessage'](msg, [d]);
+    settings['minStdDev'] = this.minStdDev;
+    r['buffer'] = this.imagedata.data.buffer;
+    return r;
 };
 
 /**
@@ -155,7 +167,6 @@ Ingemi.prototype.draw = function() {
     this.lock = false;
     console.timeEnd('render');
     console.timeEnd('total');
-    console.log('Total Pixels:', this.totalPixels);
 };
 
 /**
@@ -191,39 +202,12 @@ Ingemi.prototype.reset = function() {
  * Generate a random image
  */
 Ingemi.prototype.random = function() {
-    var points, left, top, max = 100, i = 0;
-    var average = function(array) {
-        var sum = 0, l = array.length;
-        for(var i = 0; i < l; i++) {
-            sum += array[i];
-        }
-        return sum / l;
-    };
-    var stddev = function(array, average) {
-        var l = array.length;
-        var sum = 0;
-        for(var i = 0; i < l; i++) {
-            var x = array[i] - average;
-            sum += x * x;
-        }
-        return Math.pow(sum / l, 0.5);
-    };
-/*    do {
-        points = [];
-        this.z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
-        this.x = this.dx * (Math.random() - 0.5);
-        this.y = this.dy * (Math.random() - 0.5);
-        for(var i = 0; i < 16; i++) {
-            left = Math.floor((i%4) * this.width/4);
-            top = Math.floor(Math.floor(i / 4) * this.height/4);
-            points.push(this.getValue(left, top));
-        }
-        i++;
-    } while (stddev(points, average(points)) < this.minStdDev && i < max);*/
-    this.z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
-    this.x = this.dx * (Math.random() - 0.5);
-    this.y = this.dy * (Math.random() - 0.5);
-    this.render();
+    if (this.lock) return;
+    this.lock = true;
+    console.time('render');
+    this.blockOffset = 0;
+    var r = this.makeRequestObject('random');
+    this.threads[0]['postMessage'](r, [this.imagedata.data.buffer]);
 };
 
 /**

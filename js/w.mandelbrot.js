@@ -1,5 +1,5 @@
 var x, y, z, blockOffset;
-var dx, dy, forcedHeight, blockSize, totalPixels, width, height, maxIteration, imagedata;
+var dx, dy, forcedHeight, blockSize, totalPixels, width, height, maxIteration, imagedata, minStdDev;
 
 var renderBlock = function() {
     var lim = blockSize + blockOffset > totalPixels ? totalPixels - blockOffset : blockSize;
@@ -71,6 +71,41 @@ var setPixelColor = function(pos, value) {
     imagedata[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
 };
 
+var filterRandom = function() {
+    var points, left, top, max = 100, i = 0;
+    do {
+        points = [];
+        z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
+        x = dx * (Math.random() - 0.5);
+        y = dy * (Math.random() - 0.5);
+        for(var i = 0; i < 32; i++) {
+            left = Math.floor((i%4) * width/4);
+            top = Math.floor(Math.floor(i / 4) * height/4);
+            points.push(getValue(left, top));
+        }
+        i++;
+    } while (stddev(points, average(points)) < minStdDev && i < max);
+    return [x, y, z];
+};
+
+var average = function(array) {
+    var sum = 0, l = array.length;
+    for(var i = 0; i < l; i++) {
+        sum += array[i];
+    }
+    return sum / l;
+};
+
+var stddev = function(array, average) {
+    var l = array.length;
+    var sum = 0;
+    for(var i = 0; i < l; i++) {
+        var x = array[i] - average;
+        sum += x * x;
+    }
+    return Math.pow(sum / l, 0.5);
+};
+
 self.onmessage = function(event) {
     var state = event['data']['state'];
     var settings = event['data']['settings'];
@@ -87,14 +122,26 @@ self.onmessage = function(event) {
     width = settings['width'];
     height = settings['height'];
     maxIteration = settings['maxIteration'];
+    minStdDev = settings['minStdDev'];
 
     var buffer = event['data']['buffer'];
     imagedata = new Uint32Array(buffer, 0, totalPixels);
 
-    renderBlock();
+    switch (event['data']['type']) {
+        case 'render':
+            renderBlock();
+            break;
+        case 'random':
+            filterRandom();
+            renderBlock();
+            break;
+    }
 
     var msg = {};
     msg['imagedata'] = buffer;
     msg['blockOffset'] = blockOffset;
+    msg['x'] = x;
+    msg['y'] = y;
+    msg['z'] = z;
     self['webkitPostMessage'](msg, [buffer]);
 };
