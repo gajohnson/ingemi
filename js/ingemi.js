@@ -126,20 +126,21 @@ Ingemi.prototype.render = function() {
     this.blockOffset = 0;
     var d = this.imagedata.data.buffer;
     var msg = {};
-    msg['state'] = {};
-    msg['state']['x'] = this.x;
-    msg['state']['y'] = this.y;
-    msg['state']['z'] = this.z;
-    msg['state']['blockOffset'] = this.blockOffset;
-    msg['settings'] = {};
-    msg['settings']['dx'] = this.dx;
-    msg['settings']['dy'] = this.dy;
-    msg['settings']['forcedHeight'] = this.forcedHeight;
-    msg['settings']['blockSize'] = this.blockSize;
-    msg['settings']['totalPixels'] = this.totalPixels;
-    msg['settings']['width'] = this.width;
-    msg['settings']['height'] = this.height;
-    msg['settings']['maxIteration'] = this.maxIteration;
+    var state = msg['state'] = {};
+    var settings = msg['settings'] = {};
+
+    state['x'] = this.x;
+    state['y'] = this.y;
+    state['z'] = this.z;
+    state['blockOffset'] = this.blockOffset;
+    settings['dx'] = this.dx;
+    settings['dy'] = this.dy;
+    settings['forcedHeight'] = this.forcedHeight;
+    settings['blockSize'] = this.blockSize;
+    settings['totalPixels'] = this.totalPixels;
+    settings['width'] = this.width;
+    settings['height'] = this.height;
+    settings['maxIteration'] = this.maxIteration;
     msg['buffer'] = d;
     this.threads[0]['postMessage'](msg, [d]);
 };
@@ -234,7 +235,7 @@ Ingemi.prototype.save = function(inplace) {
     var displayHeight = this.canvas.height;
     var dataURL = this.canvas.toDataURL("image/png");
     if (inplace) {
-
+        //TODO Allow saving without spawing a new window
     } else {
         var options = "left=0,top=0,width=" + displayWidth +
             ",height=" + displayHeight +
