@@ -37,10 +37,10 @@
                         ingemi.random();
                         break;
                     case 87: // W
-                        ingemi.zoom(1/2);
+                        ingemi.zoom(1/1.05);
                         break;
                     case 83: // S
-                        ingemi.zoom(2);
+                        ingemi.zoom(1.05);
                         break;
                     case 37: // Left
                         ingemi.center(0, ingemi.canvas.clientHeight / 2);
@@ -63,10 +63,10 @@
             var zoomIn = document.getElementById('zoomIn');
             var zoomOut = document.getElementById('zoomOut');
             zoomIn.addEventListener('click', function(e) {
-                ingemi.zoom(ingemi.z / 2);
+                ingemi.zoom(1 / 2);
             });
             zoomOut.addEventListener('click', function(e) {
-                ingemi.zoom(ingemi.z * 2);
+                ingemi.zoom(2);
             });
         </script>
     </body>
