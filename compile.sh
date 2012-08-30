@@ -25,6 +25,7 @@ fi
 echo "Staging remaning files"
 
 cp index.html ~/Sites/ingemi/
+cp -r css ~/Sites/ingemi/
 
 echo "Generating documentation ..."
 

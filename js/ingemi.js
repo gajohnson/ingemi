@@ -163,7 +163,7 @@ Ingemi.prototype.draw = function() {
  * @param {Float} factor Multiplier for zoom
  */
 Ingemi.prototype.zoom = function(factor) {
-    this.z = factor;
+    this.z *= factor;
     this.render();
 };
 
@@ -268,6 +268,21 @@ Ingemi.prototype['init'] = Ingemi.prototype.init;
  * @export Ingemi.prototype.render as window.Ingemi.prototype.render
  */
 Ingemi.prototype['render'] = Ingemi.prototype.render;
+
+/**
+ * @export Ingemi.prototype.zoom as window.Ingemi.prototype.zoom
+ */
+Ingemi.prototype['zoom'] = Ingemi.prototype.zoom;
+
+/**
+ * @export Ingemi.prototype.center as window.Ingemi.prototype.center
+ */
+Ingemi.prototype['center'] = Ingemi.prototype.center;
+
+/**
+ * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
+ */
+Ingemi.prototype['reset'] = Ingemi.prototype.reset;
 
 /**
  * @export Ingemi.prototype.random as window.Ingemi.prototype.random
