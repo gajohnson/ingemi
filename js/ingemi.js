@@ -34,7 +34,7 @@ Ingemi = function(container, args) {
     this.x = args['x'] || 0;
     this.y = args['y'] || 0;
     this.z = args['z'] || 1;
-    this.maxIteration = args['maxIteration'] || 155;
+    this.maxIteration = args['maxIteration'] || 255;
 
     this.sample = args['sample'] || 1;
 
