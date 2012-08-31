@@ -38,31 +38,15 @@ Ingemi = function(container, args) {
 
     this.sample = args['sample'] || 1;
 
-    this.workers = args['workers'] || 1;
+    this.workers = args['workers'] || 4;
     this.minStdDev = args['minStdDev'] || 10;
     this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
 
     this.dx = 3.5;
     this.dy = 2;
-    this.blockSize = 0;
-    this.blockOffset = 0;
 
     this.threads = [];
-    for (var i = 0; i < this.workers; i++) {
-        this.threads.push(new Worker('w.mandelbrot.js'));
-    }
-
-    this.canvas = null;
-    this.context = null;
-    this.imagedata = null;
-
-    this.clientWidth = 0;
-    this.clientHeight = 0;
-    this.forcedHeight = 0;
-
-    this.width = 0;
-    this.height = 0;
-    this.totalPixels = 0;
+    this.finishedThreads = [];
 
     this.lock = false;
 };
@@ -73,26 +57,11 @@ Ingemi = function(container, args) {
 Ingemi.prototype.init = function() {
     console.time('total');
 
-    var _this = this;
+    this.makeCanvas();
+    
+    this.scaleCanvas();
 
-    _this.makeCanvas();
-    _this.scaleCanvas();
-
-    for (var i = 0; i < _this.workers; i++) {
-        _this.threads[i].onmessage = function(event) {
-
-            // TODO Break this out and generalize to multiple threads
-            _this.x = event.data['x'] || _this.x;
-            _this.y = event.data['y'] || _this.y;
-            _this.z = event.data['z'] || _this.z;
-
-            var buffer = event.data['imagedata'];
-            var imagedata = new Uint8ClampedArray(buffer, 0, _this.totalPixels * 4);
-            _this.imagedata = _this.context.createImageData(_this.width, _this.height);
-            _this.imagedata.data.set(imagedata);
-            _this.draw();
-        };
-    }
+    this.spawnThreads('w.mandelbrot.js');
 };
 
 /**
@@ -116,10 +85,51 @@ Ingemi.prototype.scaleCanvas = function() {
     this.canvas.style.height =  this.clientHeight + 'px';
     this.forcedHeight = Math.round(this.clientWidth * this.dy / this.dx) / this.clientHeight;
     this.totalPixels = this.width * this.height;
-    this.blockSize = this.totalPixels / this.workers;
     this.imagedata = this.context.createImageData(this.width, this.height);
 
-    //this.buffer = new ArrayBuffer(this.totalPixels * 4);
+    this.buffer = [];
+    for(var i = 0; i < this.workers; i++) {
+        var blockSize = this.getBlockOffset(i + 1) - this.getBlockOffset(i);
+        this.buffer[i] = new ArrayBuffer(blockSize);
+    }
+};
+
+/**
+ * Starts web workers
+ */
+Ingemi.prototype.spawnThreads = function(filename) {
+    var _this = this;
+    for (var j = 0; j < _this.workers; j++) {
+        _this.threads[j] = new Worker(filename);
+        var r = _this.makeRequestObject('init');
+        _this.threads[j]['postMessage'](r);
+        var onmessage = function(event) {
+            _this.x = event.data['x'] || _this.x;
+            _this.y = event.data['y'] || _this.y;
+            _this.z = event.data['z'] || _this.z;
+            var type = event.data['type'];
+            if (type == 'init') {
+
+            } else if (type == 'random') {
+                _this.render();
+            } else {
+                var i = event.data['index'];
+                _this.buffer[i] = event.data['imagedata'];
+                var imagedata = new Uint8ClampedArray(_this.buffer[i]);
+                _this.imagedata.data.set(imagedata, event.data['blockOffset']);
+                _this.finishedThreads[i] = true;
+                _this.checkThreads();
+            }
+        };
+        _this.threads[j].onmessage = onmessage;
+    }
+};
+
+Ingemi.prototype.checkThreads = function() {
+    for (var i = 0; i < this.finishedThreads.length; i++) {
+        if (!this.finishedThreads[i]) return;
+    }
+    this.draw();
 };
 
 /**
@@ -129,32 +139,43 @@ Ingemi.prototype.render = function() {
     if (this.lock) return;
     this.lock = true;
     console.time('render');
-    this.blockOffset = 0;
-    var r = this.makeRequestObject('render');
-    this.threads[0]['postMessage'](r, [this.imagedata.data.buffer]);
+    for (var i = 0; i < this.workers; i++) {
+        this.finishedThreads[i] = false;
+        var r = this.makeRequestObject('render', i);
+        this.threads[i]['postMessage'](r, [this.buffer[i]]);
+    }
 };
 
-Ingemi.prototype.makeRequestObject = function(type) {
+Ingemi.prototype.makeRequestObject = function(type, index) {
     var r = {};
     r['type'] = type;
+    if (type == 'init') {
+        var settings = r['settings'] = {};
+        settings['dx'] = this.dx;
+        settings['dy'] = this.dy;
+        settings['forcedHeight'] = this.forcedHeight;
+        settings['totalPixels'] = this.totalPixels;
+        settings['width'] = this.width;
+        settings['height'] = this.height;
+        settings['maxIteration'] = this.maxIteration;
+        settings['minStdDev'] = this.minStdDev;
+    } else if (type == 'render') {
+        var state = r['state'] = {};
+        state['x'] = this.x;
+        state['y'] = this.y;
+        state['z'] = this.z;
+        state['blockOffset'] = this.getBlockOffset(index);
+        state['blockSize'] = this.buffer[index].byteLength;
+        state['index'] = index;
+        r['buffer'] = this.buffer[index];
+    } else if (type == 'random') {
 
-    var state = r['state'] = {};
-    var settings = r['settings'] = {};
-    state['x'] = this.x;
-    state['y'] = this.y;
-    state['z'] = this.z;
-    state['blockOffset'] = this.blockOffset;
-    settings['dx'] = this.dx;
-    settings['dy'] = this.dy;
-    settings['forcedHeight'] = this.forcedHeight;
-    settings['blockSize'] = this.blockSize;
-    settings['totalPixels'] = this.totalPixels;
-    settings['width'] = this.width;
-    settings['height'] = this.height;
-    settings['maxIteration'] = this.maxIteration;
-    settings['minStdDev'] = this.minStdDev;
-    r['buffer'] = this.imagedata.data.buffer;
+    }
     return r;
+};
+
+Ingemi.prototype.getBlockOffset = function(index) {
+    return Math.ceil(this.totalPixels * index / this.workers) * 4;
 };
 
 /**
@@ -203,11 +224,9 @@ Ingemi.prototype.reset = function() {
  */
 Ingemi.prototype.random = function() {
     if (this.lock) return;
-    this.lock = true;
     console.time('render');
-    this.blockOffset = 0;
     var r = this.makeRequestObject('random');
-    this.threads[0]['postMessage'](r, [this.imagedata.data.buffer]);
+    this.threads[0]['postMessage'](r);
 };
 
 /**

@@ -1,11 +1,10 @@
-var x, y, z, blockOffset;
-var dx, dy, forcedHeight, blockSize, totalPixels, width, height, maxIteration, imagedata, minStdDev;
+var type, buffer;
+var x, y, z, blockOffset, index;
+var dx, dy, forcedHeight, blockSize, width, height, maxIteration, imagedata, minStdDev;
 
 var renderBlock = function() {
-    var lim = blockSize + blockOffset > totalPixels ? totalPixels - blockOffset : blockSize;
-    var i;
-    for(i = 0; i < lim; i++) {
-        var pos = blockOffset + i;
+    for(var i = 0; i < blockSize / 4; i++) {
+        var pos = blockOffset / 4 + i;
         var left = pos % width, top = Math.floor(pos/width);
         pos = (top * width + left); //* 4;
         var value = getValue(left, top);
@@ -68,7 +67,7 @@ var setPixelColor = function(pos, value) {
         g = 0;
         b = (6 - value) * 255;
     }
-    imagedata[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
+    imagedata[pos - blockOffset / 4] = (255 << 24) | (b << 16) | (g << 8) | r;
 };
 
 var filterRandom = function() {
@@ -106,42 +105,57 @@ var stddev = function(array, average) {
     return Math.pow(sum / l, 0.5);
 };
 
-self.onmessage = function(event) {
-    var state = event['data']['state'];
+handleInitRequest = function(msg, event) {
     var settings = event['data']['settings'];
-    x = state['x'];
-    y = state['y'];
-    z = state['z'];
-    blockOffset = state['blockOffset'];
-
     dx = settings['dx'];
     dy = settings['dy'];
     forcedHeight = settings['forcedHeight'];
-    blockSize = settings['totalPixels'];
-    totalPixels = settings['totalPixels'];
     width = settings['width'];
     height = settings['height'];
     maxIteration = settings['maxIteration'];
     minStdDev = settings['minStdDev'];
+};
 
-    var buffer = event['data']['buffer'];
-    imagedata = new Uint32Array(buffer, 0, totalPixels);
-
-    switch (event['data']['type']) {
-        case 'render':
-            renderBlock();
-            break;
-        case 'random':
-            filterRandom();
-            renderBlock();
-            break;
-    }
-
-    var msg = {};
+handleRenderRequest = function(msg, event) {
+    var state = event['data']['state'];
+    x = state['x'];
+    y = state['y'];
+    z = state['z'];
+    blockOffset = state['blockOffset'];
+    blockSize = state['blockSize'];
+    index = state['index'];
+    buffer = event['data']['buffer'];
+    imagedata = new Uint32Array(buffer);
+    renderBlock();
     msg['imagedata'] = buffer;
     msg['blockOffset'] = blockOffset;
+    msg['index'] = index;
+};
+
+handleRandomRequest = function(msg, event) {
+    filterRandom();
+};
+
+self.onmessage = function(event) {
+    var msg = {};
+    type = msg['type'] = event['data']['type'];
+    switch (type) {
+        case 'init':
+            handleInitRequest(msg, event);
+            break;
+        case 'render':
+            handleRenderRequest(msg, event);
+            break;
+        case 'random':
+            handleRandomRequest(msg, event);
+            break;
+    }
     msg['x'] = x;
     msg['y'] = y;
     msg['z'] = z;
-    self['webkitPostMessage'](msg, [buffer]);
+    if (buffer && buffer.byteLength) {
+        self['postMessage'](msg, [buffer]);
+    } else {
+        self['postMessage'](msg);
+    }
 };
