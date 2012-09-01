@@ -31,6 +31,11 @@
                 ingemi.center(e.clientX, e.clientY);
             });
 
+            var testLoop = null;
+            var test = function() {
+                ingemi.zoom(1/1.05);
+                testLoop = setTimeout(test, 0);
+            };
             addEventListener('keydown', function (e) {
                 switch (e.keyCode) {
                     case 82: // R
@@ -41,6 +46,17 @@
                         break;
                     case 83: // S
                         ingemi.zoom(2);
+                        break;
+                    case 84: // T
+                        if (testLoop) {
+                            clearTimeout(testLoop);
+                            testLoop = null;
+                            ingemi.average();
+                        } else {
+                            console.log('START TEST');
+                            ingemi.center(0, ingemi.canvas.clientHeight / 2);
+                            test();
+                        }
                         break;
                     case 37: // Left
                         ingemi.center(0, ingemi.canvas.clientHeight / 2);

@@ -1,35 +1,25 @@
 var type, buffer;
-var x, y, z, blockOffset, index;
+var x, y, z, blockOffset, pixelOffset, index;
 var dx, dy, forcedHeight, blockSize, width, height, maxIteration, imagedata, minStdDev;
 
-var renderBlock = function() {
-    for(var i = 0; i < blockSize / 4; i++) {
-        var pos = blockOffset / 4 + i;
-        var left = pos % width, top = Math.floor(pos/width);
-        pos = (top * width + left); //* 4;
-        var value = getValue(left, top);
-        setPixelColor(pos, value);
+var renderBlock = function() { 
+    for(var i = blockOffset / 4, l = i + blockSize / 4, c = i; i < l; i++) {
+        setPixelColor(i - c, getValue(i % width, Math.floor(i/width)));
     }
 };
 
 var getValue = function(left, top) {
-    var scaledX, scaledY;
-
-    scaledX = z * (dx * left / width - 1.75) + x;
-    scaledY = z / forcedHeight * (dy * top / height - 1) + y;
+    var scaledX = z * (dx * left / width - 1.75) + x;
+    var scaledY = z / forcedHeight * (dy * top / height - 1) + y;
 
     /** Optimize against inner cartoid and return known maxIteration */
-    if (isInCartoid(scaledX, scaledY)) {
-        return maxIteration;
-    }
-    var _x = 0;
-    var _y = 0;
-    var iteration;
-    var xtemp;
-    for(iteration = 0; _x*_x + _y*_y < 4 && iteration < maxIteration; iteration++) {
-        xtemp = _x*_x - _y*_y + scaledX;
-        _y = 2*_x*_y + scaledY;
-        _x = xtemp;
+    if (isInCartoid(scaledX, scaledY)) return maxIteration;
+
+    var xi = 0, yi = 0, iteration;
+    for(iteration = 0; xi*xi + yi*yi < 4 && iteration < maxIteration; iteration++) {
+        var xtemp = xi*xi - yi*yi + scaledX;
+        yi = 2*xi*yi + scaledY;
+        xi = xtemp;
     }
     return iteration;
 };
@@ -67,7 +57,7 @@ var setPixelColor = function(pos, value) {
         g = 0;
         b = (6 - value) * 255;
     }
-    imagedata[pos - blockOffset / 4] = (255 << 24) | (b << 16) | (g << 8) | r;
+    imagedata[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
 };
 
 var filterRandom = function() {
@@ -105,8 +95,7 @@ var stddev = function(array, average) {
     return Math.pow(sum / l, 0.5);
 };
 
-handleInitRequest = function(msg, event) {
-    var settings = event['data']['settings'];
+handleInitRequest = function(settings) {
     dx = settings['dx'];
     dy = settings['dy'];
     forcedHeight = settings['forcedHeight'];
@@ -116,15 +105,15 @@ handleInitRequest = function(msg, event) {
     minStdDev = settings['minStdDev'];
 };
 
-handleRenderRequest = function(msg, event) {
-    var state = event['data']['state'];
+handleRenderRequest = function(msg, data) {
+    var state = data['state'];
     x = state['x'];
     y = state['y'];
     z = state['z'];
     blockOffset = state['blockOffset'];
     blockSize = state['blockSize'];
     index = state['index'];
-    buffer = event['data']['buffer'];
+    buffer = data['buffer'];
     imagedata = new Uint32Array(buffer);
     renderBlock();
     msg['imagedata'] = buffer;
@@ -132,22 +121,23 @@ handleRenderRequest = function(msg, event) {
     msg['index'] = index;
 };
 
-handleRandomRequest = function(msg, event) {
+handleRandomRequest = function() {
     filterRandom();
 };
 
 self.onmessage = function(event) {
     var msg = {};
-    type = msg['type'] = event['data']['type'];
+    var data = event['data'];
+    type = msg['type'] = data['type'];
     switch (type) {
         case 'init':
-            handleInitRequest(msg, event);
+            handleInitRequest(data['settings']);
             break;
         case 'render':
-            handleRenderRequest(msg, event);
+            handleRenderRequest(msg, data);
             break;
         case 'random':
-            handleRandomRequest(msg, event);
+            handleRandomRequest();
             break;
     }
     msg['x'] = x;

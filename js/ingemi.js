@@ -1,5 +1,4 @@
 (function(){
-
 /**
  * Ingemi(nate) - Mandelbrot set generator.
  * @name Ingemi
@@ -49,18 +48,18 @@ Ingemi = function(container, args) {
     this.finishedThreads = [];
 
     this.lock = false;
+
+    this.timer = null;
+    this.time = 0;
+    this.renders = 0;
 };
 
 /**
  * Initialize the canvas element.
  */
 Ingemi.prototype.init = function() {
-    console.time('total');
-
     this.makeCanvas();
-    
     this.scaleCanvas();
-
     this.spawnThreads('w.mandelbrot.js');
 };
 
@@ -95,38 +94,27 @@ Ingemi.prototype.scaleCanvas = function() {
 };
 
 /**
- * Starts web workers
+ * Starts web workers.
+ * @param {string} filename The relative path to the web worker file.
  */
 Ingemi.prototype.spawnThreads = function(filename) {
     var _this = this;
-    for (var j = 0; j < _this.workers; j++) {
-        _this.threads[j] = new Worker(filename);
-        var r = _this.makeRequestObject('init');
-        _this.threads[j]['postMessage'](r);
-        var onmessage = function(event) {
-            _this.x = event.data['x'] || _this.x;
-            _this.y = event.data['y'] || _this.y;
-            _this.z = event.data['z'] || _this.z;
-            var type = event.data['type'];
-            if (type == 'init') {
-
-            } else if (type == 'random') {
-                _this.render();
-            } else {
-                var i = event.data['index'];
-                _this.buffer[i] = event.data['imagedata'];
-                var imagedata = new Uint8ClampedArray(_this.buffer[i]);
-                _this.imagedata.data.set(imagedata, event.data['blockOffset']);
-                _this.finishedThreads[i] = true;
-                _this.checkThreads();
-            }
+    for (var j = 0; j < this.workers; j++) {
+        this.threads[j] = new Worker(filename);
+        var r = this.makeRequestObject('init');
+        this.threads[j]['postMessage'](r);
+        this.threads[j].onmessage = function(event) {
+            _this.handleMessage(event['data']);
         };
-        _this.threads[j].onmessage = onmessage;
     }
 };
 
+/**
+ * Check if all threads have completed.
+ * @return {Boolean}
+ */
 Ingemi.prototype.checkThreads = function() {
-    for (var i = 0; i < this.finishedThreads.length; i++) {
+    for (var i = 0, l = this.finishedThreads.length; i < l; i++) {
         if (!this.finishedThreads[i]) return;
     }
     this.draw();
@@ -138,7 +126,10 @@ Ingemi.prototype.checkThreads = function() {
 Ingemi.prototype.render = function() {
     if (this.lock) return;
     this.lock = true;
-    console.time('render');
+
+    // Benchmarking
+    this.timer = +new Date();
+
     for (var i = 0; i < this.workers; i++) {
         this.finishedThreads[i] = false;
         var r = this.makeRequestObject('render', i);
@@ -146,36 +137,73 @@ Ingemi.prototype.render = function() {
     }
 };
 
+/**
+ * Create message to be passed to worker.
+ * @param {String} type The type of request ('init' | 'render' | 'random').
+ * @param {Number} index The index of the thread being messaged.
+ */
 Ingemi.prototype.makeRequestObject = function(type, index) {
     var r = {};
     r['type'] = type;
-    if (type == 'init') {
-        var settings = r['settings'] = {};
-        settings['dx'] = this.dx;
-        settings['dy'] = this.dy;
-        settings['forcedHeight'] = this.forcedHeight;
-        settings['totalPixels'] = this.totalPixels;
-        settings['width'] = this.width;
-        settings['height'] = this.height;
-        settings['maxIteration'] = this.maxIteration;
-        settings['minStdDev'] = this.minStdDev;
-    } else if (type == 'render') {
-        var state = r['state'] = {};
-        state['x'] = this.x;
-        state['y'] = this.y;
-        state['z'] = this.z;
-        state['blockOffset'] = this.getBlockOffset(index);
-        state['blockSize'] = this.buffer[index].byteLength;
-        state['index'] = index;
-        r['buffer'] = this.buffer[index];
-    } else if (type == 'random') {
-
+    switch (type) {
+        case 'init':
+            var settings = r['settings'] = {};
+            settings['dx'] = this.dx;
+            settings['dy'] = this.dy;
+            settings['forcedHeight'] = this.forcedHeight;
+            settings['totalPixels'] = this.totalPixels;
+            settings['width'] = this.width;
+            settings['height'] = this.height;
+            settings['maxIteration'] = this.maxIteration;
+            settings['minStdDev'] = this.minStdDev;
+            break;
+        case 'render':
+            var state = r['state'] = {};
+            state['x'] = this.x;
+            state['y'] = this.y;
+            state['z'] = this.z;
+            state['blockOffset'] = this.getBlockOffset(index);
+            state['blockSize'] = this.buffer[index].byteLength;
+            state['index'] = index;
+            r['buffer'] = this.buffer[index];
+            break;
+        case 'random':
+            break;
     }
     return r;
 };
 
+/**
+ * Get byte offset for a given thread.
+ * @param {Number} index
+ */
 Ingemi.prototype.getBlockOffset = function(index) {
     return Math.ceil(this.totalPixels * index / this.workers) * 4;
+};
+
+/**
+ * Receive and process incoming messages from workers.
+ * @param {Object} data event.data as passed from worker.
+ */
+Ingemi.prototype.handleMessage = function(data) {
+    switch (data['type']) {
+        case 'init':
+            break;
+        case 'render':
+            var i = data['index'];
+            this.buffer[i] = data['imagedata'];
+            var imagedata = new Uint8ClampedArray(this.buffer[i]);
+            this.imagedata.data.set(imagedata, data['blockOffset']);
+            this.finishedThreads[i] = true;
+            this.checkThreads();
+            break;
+        case 'random':
+            this.x = data['x'] || this.x;
+            this.y = data['y'] || this.y;
+            this.z = data['z'] || this.z;
+            this.render();
+            break;
+    }
 };
 
 /**
@@ -185,9 +213,14 @@ Ingemi.prototype.draw = function() {
     this.canvas.width = this.width;
     this.canvas.height = this.height;
     this.context.putImageData(this.imagedata, 0, 0);
+
+    // Benchmarking
+    var t = (+new Date() - this.timer);
+    this.time += t;
+    console.log(t);
+    this.renders++;
+
     this.lock = false;
-    console.timeEnd('render');
-    console.timeEnd('total');
 };
 
 /**
@@ -224,13 +257,13 @@ Ingemi.prototype.reset = function() {
  */
 Ingemi.prototype.random = function() {
     if (this.lock) return;
-    console.time('render');
     var r = this.makeRequestObject('random');
     this.threads[0]['postMessage'](r);
 };
 
 /**
  * Export the current view to PNG
+ * @param {Boolean} inplace Create the image in the same window | Open a new window.
  */
 Ingemi.prototype.save = function(inplace) {
     var exportImage;
@@ -255,6 +288,13 @@ Ingemi.prototype.save = function(inplace) {
         exportImage = imageWindow.document.getElementById("exportImage");
     }
     exportImage.src = dataURL;
+};
+
+/**
+ * Print the running average render time for benchmarking purposes.
+ */
+Ingemi.prototype.average = function() {
+    console.log('Average render time: ' + Math.round(this.time / this.renders) + 'ms');
 };
 
 /**
@@ -291,5 +331,15 @@ Ingemi.prototype['reset'] = Ingemi.prototype.reset;
  * @export Ingemi.prototype.random as window.Ingemi.prototype.random
  */
 Ingemi.prototype['random'] = Ingemi.prototype.random;
+
+/**
+ * @export Ingemi.prototype.average as window.Ingemi.prototype.average
+ */
+Ingemi.prototype['average'] = Ingemi.prototype.average;
+
+/**
+ * @export Ingemi.prototype.save as window.Ingemi.prototype.save
+ */
+Ingemi.prototype['save'] = Ingemi.prototype.save;
 
 })();
