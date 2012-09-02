@@ -215,9 +215,7 @@ Ingemi.prototype.draw = function() {
     this.context.putImageData(this.imagedata, 0, 0);
 
     // Benchmarking
-    var t = (+new Date() - this.timer);
-    this.time += t;
-    console.log(t);
+    this.time += (+new Date() - this.timer);
     this.renders++;
 
     this.lock = false;
@@ -228,6 +226,7 @@ Ingemi.prototype.draw = function() {
  * @param {Float} factor Multiplier for zoom
  */
 Ingemi.prototype.zoom = function(factor) {
+    if (this.lock) return;
     this.z *= factor;
     this.render();
 };
@@ -238,6 +237,7 @@ Ingemi.prototype.zoom = function(factor) {
  * @param {Integer} y In pixels from the top of the canvas
  */
 Ingemi.prototype.center = function(x, y) {
+    if (this.lock) return;
     this.x += (x / this.sample / this.width - 0.5) * this.dx * this.z;
     this.y += (y / this.sample / this.height - 0.5) * this.dy * this.z;
     this.render();
@@ -253,7 +253,7 @@ Ingemi.prototype.reset = function() {
 };
 
 /**
- * Generate a random image
+ * Generate a random image. Candidates are filtered by standard deviation of 16 sample points.
  */
 Ingemi.prototype.random = function() {
     if (this.lock) return;
@@ -273,16 +273,11 @@ Ingemi.prototype.save = function(inplace) {
     if (inplace) {
         //TODO Allow saving without spawing a new window
     } else {
-        var options = "left=0,top=0,width=" + displayWidth +
-            ",height=" + displayHeight +
-            ",toolbar=0,resizable=0";
+        var options = "left=0,top=0,toolbar=0,resizable=0,width=" + displayWidth + ",height=" + displayHeight;
         var imageWindow = window.open("", "Ingemi", options);
-        imageWindow.document.write("<title>Ingemi Export Image</title>")
-        imageWindow.document.write("<img id='exportImage'"
-                                    + " alt=''"
-                                    + " height='" + displayHeight + "'"
-                                    + " width='"  + displayWidth  + "'"
-                                    + " style='position:absolute;left:0;top:0'/>");
+        imageWindow.document.write("<title>Ingemi Export Image</title>");
+        imageWindow.document.write("<img id='exportImage' style='position:absolute;left:0;top:0'"
+                                    + " height='" + displayHeight + "' width='"  + displayWidth  + "'/>");
         imageWindow.document.close();
         //copy the image into the empty img in the newly opened window:
         exportImage = imageWindow.document.getElementById("exportImage");
