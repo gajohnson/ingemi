@@ -33,7 +33,7 @@ Ingemi = function(container, args) {
     this.x = args['x'] || 0;
     this.y = args['y'] || 0;
     this.z = args['z'] || 1;
-    this.maxIteration = args['maxIteration'] || 255;
+    this.maxIteration = this['maxIteration'] = args['maxIteration'] || 255;
 
     this.sample = args['sample'] || 1;
 
@@ -279,7 +279,6 @@ Ingemi.prototype.save = function(inplace) {
         imageWindow.document.write("<img id='exportImage' style='position:absolute;left:0;top:0'"
                                     + " height='" + displayHeight + "' width='"  + displayWidth  + "'/>");
         imageWindow.document.close();
-        //copy the image into the empty img in the newly opened window:
         exportImage = imageWindow.document.getElementById("exportImage");
     }
     exportImage.src = dataURL;
