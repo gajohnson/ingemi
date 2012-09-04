@@ -60,7 +60,7 @@ Ingemi = function(container, args) {
 Ingemi.prototype.init = function() {
     this.makeCanvas();
     this.scaleCanvas();
-    this.spawnThreads('w.mandelbrot.js');
+    this.spawnThreads('js/w.mandelbrot.js');
 };
 
 /**
