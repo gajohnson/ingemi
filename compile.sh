@@ -3,26 +3,30 @@
 OUT_DIR=~/Sites/ingemi
 
 if [ "$1" == debug ]; then
-cp ./js/ingemi.js $OUT_DIR/
-cp ./js/w.mandelbrot.js $OUT_DIR/
+echo "Debug flag set ..."
 else
 echo "Compiling javascript ..."
 
 cd closure-compiler
 
-cp ../js/ingemi.js ./ingemi.js && \
+cp ../assets/js/ingemi.js ./ingemi.js && \
 java -jar compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js ingemi.js --js_output_file ingemi.min.js && \
 rm ingemi.js
-mv ingemi.min.js $OUT_DIR/ingemi.js
+mv ingemi.min.js ../build/
 
 cp ../js/w.mandelbrot.js ./w.mandelbrot.js && \
 java -jar compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js w.mandelbrot.js --js_output_file w.mandelbrot.min.js && \
 rm w.mandelbrot.js
-mv w.mandelbrot.min.js $OUT_DIR/w.mandelbrot.js
+mv w.mandelbrot.min.js ../build/
 
 echo "Ingemi compiled successfully"
 cd ..
 fi
+
+echo "Staging static assets"
+cp -r ./assets/css ./build
+cp -r ./assets/html/* ./build/
+cp -r ./assets/js ./build
 
 echo "Generating documentation ..."
 
@@ -36,4 +40,4 @@ rm -rf ./out
 
 cd ..
 
-cp -r $OUT_DIR/* ./build/
+cp -r ./build/* $OUT_DIR/
