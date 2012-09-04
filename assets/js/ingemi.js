@@ -253,6 +253,21 @@ Ingemi.prototype.reset = function() {
 };
 
 /**
+ * Get or set the current viewport.
+ * @param {Object=} coords
+ */
+Ingemi.prototype.state = function(coords) {
+    if (!coords) return {
+        'x': this.x,
+        'y': this.y,
+        'z': this.z
+    };
+    this.x = coords['x'] || this.x;
+    this.y = coords['y'] || this.y;
+    this.z = coords['z'] || this.z;
+};
+
+/**
  * Generate a random image. Candidates are filtered by standard deviation of 16 sample points.
  */
 Ingemi.prototype.random = function() {
@@ -320,6 +335,11 @@ Ingemi.prototype['center'] = Ingemi.prototype.center;
  * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
  */
 Ingemi.prototype['reset'] = Ingemi.prototype.reset;
+
+/**
+ * @export Ingemi.prototype.state as window.Ingemi.prototype.state
+ */
+Ingemi.prototype['state'] = Ingemi.prototype.state;
 
 /**
  * @export Ingemi.prototype.random as window.Ingemi.prototype.random

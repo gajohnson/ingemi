@@ -3,23 +3,33 @@
     <head>
         <title>Ingemi</title>
         <style>
+            body {
+                background-color:#353530;
+            }
             #ingemi {
                 position: absolute;
                 top : 10px;
                 right: 10px;
                 width: 350px;
                 height: 200px;
+                border: 1px solid #282828;
             }
         </style>
         <script type='text/javascript' src='js/ingemi.js'></script>
     </head>
     <body>
-        <div id='ingemi'></div>
+        <a href="demo.html"><div id='ingemi'></div></a>
         <script type='text/javascript'>
             var parentDiv = document.getElementById('ingemi');
             var ingemi = new Ingemi(parentDiv);
             ingemi.init();
-            ingemi.render();
+            ingemi.random();
+            var demoLoop = function() {
+                ingemi.zoom(1/1.025);
+                if (ingemi.state().z < 1 / Math.pow(2, 27)) ingemi.random();
+                setTimeout(demoLoop, 0);
+            };
+            demoLoop();
         </script>
     </body>
 </html>
