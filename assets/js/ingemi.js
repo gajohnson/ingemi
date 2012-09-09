@@ -239,7 +239,7 @@ Ingemi.prototype.zoom = function(factor) {
 Ingemi.prototype.center = function(x, y) {
     if (this.lock) return;
     this.x += (x / this.sample / this.width - 0.5) * this.dx * this.z;
-    this.y += (y / this.sample / this.height - 0.5) * this.dy * this.z;
+    this.y += (y / this.sample / this.height - 0.5) * this.dy * this.z / this.forcedHeight;
     this.render();
 };
 

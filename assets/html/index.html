@@ -28,16 +28,17 @@
         <h1>Writing fast, non-blocking JavaScript with Web Workers and Typed Arrays</h1>
         <a href="demo.html"><div id='ingemi'></div></a>
         <script type='text/javascript'>
-            var parentDiv = document.getElementById('ingemi', {
+            var parentDiv = document.getElementById('ingemi');
+            var ingemi = new Ingemi(parentDiv, {
                 minStdDev: 20,
-                sample: 0.5
+                sample: 0.5,
+                maxIteration: 100
             });
-            var ingemi = new Ingemi(parentDiv);
             ingemi.init();
             ingemi.random();
             var iteration = 0;
             var demoLoop = function() {
-                ingemi.zoom(1/1.01);
+                ingemi.zoom(1/1.005);
                 iteration++;
                 if (iteration > 200) {
                     iteration = 0;
@@ -45,7 +46,7 @@
                         ingemi.random();
                         demoLoop();
                     }, 500);
-                } else setTimeout(demoLoop, 50);
+                } else setTimeout(demoLoop, 120);
             };
             demoLoop();
         </script>

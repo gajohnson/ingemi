@@ -1,4 +1,151 @@
-var j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y;function z(a,d){var b=n*(q*a/u-1.75)+l,e=n/s*(r*d/v-1)+m,f=(b-0.25)*(b-0.25)+e*e;if(b<=Math.sqrt(f)-2*f+0.25)return w;var c=f=0,g;for(g=0;4>f*f+c*c&&g<w;g++)var h=f*f-c*c+b,c=2*f*c+e,f=h;return g}function A(a){for(var d=0,b=a.length,e=0;e<b;e++)d+=a[e];return d/b}function B(a,d){for(var b=a.length,e=0,f=0;f<b;f++)var c=a[f]-d,e=e+c*c;return Math.pow(e/b,0.5)}handleInitRequest=function(a){q=a.dx;r=a.dy;s=a.forcedHeight;u=a.width;v=a.height;w=a.maxIteration;y=a.minStdDev};
-handleRenderRequest=function(a,d){var b=d.state;l=b.x;m=b.y;n=b.z;o=b.blockOffset;t=b.blockSize;p=b.index;k=d.buffer;x=new Uint32Array(k);for(var b=o/4,e=b+t/4,f=b;b<e;b++){var c=z(b%u,Math.floor(b/u)),g=void 0,h=void 0,i=void 0,c=6*c/w;1>c?(g=255,h=255*c,i=0):2>c?(g=255*(2-c),h=255,i=0):3>c?(g=0,h=255,i=255*(c-2)):4>c?(g=0,h=255*(4-c),i=255):5>c?(g=255*(c-4),h=0,i=255):(g=255,h=0,i=255*(6-c));x[b-f]=-16777216|i<<16|h<<8|g}a.imagedata=k;a.blockOffset=o;a.index=p};
-handleRandomRequest=function(){var a,d,b,e=0;do{a=[];n=1/Math.pow(2,Math.floor(22*Math.random())+10);l=q*(Math.random()-0.5);m=r*(Math.random()-0.5);for(e=0;32>e;e++)d=Math.floor(e%4*u/4),b=Math.floor(Math.floor(e/4)*v/4),a.push(z(d,b));e++}while(B(a,A(a))<y&&100>e)};
-self.onmessage=function(a){var d={},a=a.data;j=d.type=a.type;switch(j){case "init":handleInitRequest(a.settings);break;case "render":handleRenderRequest(d,a);break;case "random":handleRandomRequest()}d.x=l;d.y=m;d.z=n;k&&k.byteLength?self.postMessage(d,[k]):self.postMessage(d)};
+var type, buffer;
+var x, y, z, blockOffset, pixelOffset, index;
+var dx, dy, forcedHeight, blockSize, width, height, maxIteration, imagedata, minStdDev;
+
+var renderBlock = function() { 
+    for(var i = blockOffset / 4, l = i + blockSize / 4, c = i; i < l; i++) {
+        setPixelColor(i - c, getValue(i % width, Math.floor(i/width)));
+    }
+};
+
+var getValue = function(left, top) {
+    var scaledX = z * (dx * left / width - 1.75) + x;
+    var scaledY = z / forcedHeight * (dy * top / height - 1) + y;
+
+    /** Optimize against inner cartoid and return known maxIteration */
+    if (isInCartoid(scaledX, scaledY)) return maxIteration;
+
+    var xi = 0, yi = 0, iteration;
+    for(iteration = 0; xi*xi + yi*yi < 4 && iteration < maxIteration; iteration++) {
+        var xtemp = xi*xi - yi*yi + scaledX;
+        yi = 2*xi*yi + scaledY;
+        xi = xtemp;
+    }
+    return iteration;
+};
+
+var isInCartoid = function(left, top) {
+    var p = (left - 0.25) * (left - 0.25) + (top * top);
+    return left <= Math.sqrt(p) - (2 * p) + 0.25;
+};
+
+var setPixelColor = function(pos, value) {
+    var r, g, b;
+    value = 6 * value / maxIteration;
+    if (value < 1) {
+        r = 255;
+        g = value * 255;
+        b = 0;
+    } else if (value < 2) {
+        r = (2 - value) * 255;
+        g = 255;
+        b = 0;
+    } else if (value < 3) {
+        r = 0;
+        g = 255;
+        b = (value - 2) * 255;
+    } else if (value < 4) {
+        r = 0;
+        g = (4 - value) * 255;
+        b = 255;
+    } else if (value < 5) {
+        r = (value - 4) * 255;
+        g = 0;
+        b = 255;
+    } else {
+        r = 255;
+        g = 0;
+        b = (6 - value) * 255;
+    }
+    imagedata[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
+};
+
+var filterRandom = function() {
+    var points, left, top, max = 100, i = 0;
+    do {
+        points = [];
+        z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
+        x = dx * (Math.random() - 0.5);
+        y = dy * (Math.random() - 0.5);
+        for(var i = 0; i < 32; i++) {
+            left = Math.floor((i%4) * width/4);
+            top = Math.floor(Math.floor(i / 4) * height/4);
+            points.push(getValue(left, top));
+        }
+        i++;
+    } while (stddev(points, average(points)) < minStdDev && i < max);
+    return [x, y, z];
+};
+
+var average = function(array) {
+    var sum = 0, l = array.length;
+    for(var i = 0; i < l; i++) {
+        sum += array[i];
+    }
+    return sum / l;
+};
+
+var stddev = function(array, average) {
+    var l = array.length;
+    var sum = 0;
+    for(var i = 0; i < l; i++) {
+        var x = array[i] - average;
+        sum += x * x;
+    }
+    return Math.pow(sum / l, 0.5);
+};
+
+handleInitRequest = function(settings) {
+    dx = settings['dx'];
+    dy = settings['dy'];
+    forcedHeight = settings['forcedHeight'];
+    width = settings['width'];
+    height = settings['height'];
+    maxIteration = settings['maxIteration'];
+    minStdDev = settings['minStdDev'];
+};
+
+handleRenderRequest = function(msg, data) {
+    var state = data['state'];
+    x = state['x'];
+    y = state['y'];
+    z = state['z'];
+    blockOffset = state['blockOffset'];
+    blockSize = state['blockSize'];
+    index = state['index'];
+    buffer = data['buffer'];
+    imagedata = new Uint32Array(buffer);
+    renderBlock();
+    msg['imagedata'] = buffer;
+    msg['blockOffset'] = blockOffset;
+    msg['index'] = index;
+};
+
+handleRandomRequest = function() {
+    filterRandom();
+};
+
+self.onmessage = function(event) {
+    var msg = {};
+    var data = event['data'];
+    type = msg['type'] = data['type'];
+    switch (type) {
+        case 'init':
+            handleInitRequest(data['settings']);
+            break;
+        case 'render':
+            handleRenderRequest(msg, data);
+            break;
+        case 'random':
+            handleRandomRequest();
+            break;
+    }
+    msg['x'] = x;
+    msg['y'] = y;
+    msg['z'] = z;
+    if (buffer && buffer.byteLength) {
+        self['postMessage'](msg, [buffer]);
+    } else {
+        self['postMessage'](msg);
+    }
+};

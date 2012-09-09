@@ -1,0 +1,1 @@
+Blog - Based on the default template for JSDoc 3.

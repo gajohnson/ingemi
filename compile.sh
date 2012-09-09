@@ -34,13 +34,10 @@ fi
 
 echo "Generating documentation ..."
 
-cd _jsdoc-toolkit
+cd jsdoc3
 
-java -jar jsrun.jar app/run.js -a -t=templates/jsdoc ../assets/js/ingemi.js && \
-rm -rf ../docs && \
 mkdir -p ../build/docs && \
-mv ./out/jsdoc/* ../build/docs/ && \
-rm -rf ./out
+./jsdoc -r -t templates/blog -d ../build/docs/ ../assets/js/*
 
 cd ..
 
