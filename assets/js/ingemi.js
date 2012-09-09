@@ -202,14 +202,6 @@ Ingemi.prototype.handleMessage = function(data) {
             this.y = data['y'] || this.y;
             this.z = data['z'] || this.z;
             this.render();
-            points = [];
-            context.fillStyle = 'rgba(255, 0, 0, 100)';
-            for(var i = 0; i < 32; i++) {
-                left = Math.floor((i%4) * width/4);
-                top = Math.floor(Math.floor(i / 4) * height/4);
-                context.drawRect(left, top, 10, 10);
-            }
-            i++;
             break;
     }
 };

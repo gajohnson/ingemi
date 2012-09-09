@@ -61,15 +61,15 @@ var setPixelColor = function(pos, value) {
 };
 
 var filterRandom = function() {
-    var points, left, top, max = 100, i = 0;
+    var points, max = 100, i = 0;
     do {
         points = [];
         z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
         x = dx * (Math.random() - 0.5);
         y = dy * (Math.random() - 0.5);
-        for(var i = 0; i < 32; i++) {
-            left = Math.floor((i%4) * width/4);
-            top = Math.floor(Math.floor(i / 4) * height/4);
+        for(var i = 0; i < 64; i++) {
+            var left = Math.floor((i % 8) * width / 8);
+            var top = Math.floor(Math.floor(i / 8) * height / 8);
             points.push(getValue(left, top));
         }
         i++;
