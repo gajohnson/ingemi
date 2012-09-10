@@ -35,7 +35,7 @@
                 maxIteration: 100
             });
             ingemi.init();
-            ingemi.random();
+            ingemi.rand();
             var iteration = 0;
             var demoLoop = function() {
                 ingemi.zoom(1/1.005);
@@ -43,7 +43,7 @@
                 if (iteration > 200) {
                     iteration = 0;
                     setTimeout(function(){
-                        ingemi.random();
+                        ingemi.rand();
                         demoLoop();
                     }, 500);
                 } else setTimeout(demoLoop, 120);

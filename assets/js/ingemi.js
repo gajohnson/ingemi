@@ -12,7 +12,7 @@
  * @property {Float} y Vertical offset of the coordinate system
  *     relative to the center of the canvas.
  * @property {Float} z Magnification level.
- * @property {Number} maxIteration Maximum iteration used in escape-velocity
+ * @property {Number} iterations Maximum iteration used in escape-velocity
  *     calculations. High numbers produce greater color differentiation.
  * @property {Float} sample Used to strech and compress internal canvas dimensions.
  * @property {Number} workers Number of threads to use.
@@ -33,7 +33,7 @@ Ingemi = function(container, args) {
     this.x = args['x'] || 0;
     this.y = args['y'] || 0;
     this.z = args['z'] || 1;
-    this.maxIteration = this['maxIteration'] = args['maxIteration'] || 255;
+    this.iterations = args['iterations'] || 255;
 
     this.sample = args['sample'] || 1;
 
@@ -63,9 +63,9 @@ Ingemi.prototype.init = function() {
  * Create a canvas in the parent div and inherit its size.
  */
 Ingemi.prototype.makeCanvas = function() {
-    this.cvs = document.createElement('canvas');
-    this.container.appendChild(this.cvs);
-    this.ctx = this.cvs.getContext('2d');
+    this.canvas_ = document.createElement('canvas');
+    this.container.appendChild(this.canvas_);
+    this.ctx = this.canvas_.getContext('2d');
 };
 
 /**
@@ -76,16 +76,16 @@ Ingemi.prototype.scaleCanvas = function() {
     var _height = this.container.clientHeight;
     this.w = Math.floor(_width / this.sample);
     this.h = Math.floor(_height / this.sample);
-    this.cvs.style.width = _width + 'px';
-    this.cvs.style.height =  _height + 'px';
-    this.forcedHeight = Math.round(_width * this.dy / this.dx) / _height;
-    this.totalPixels = this.w * this.h;
-    this.imagedata = this.ctx.createImageData(this.w, this.h);
+    this.canvas_.style.width = _width + 'px';
+    this.canvas_.style.height =  _height + 'px';
+    this.hScale = Math.round(_width * this.dy / this.dx) / _height;
+    this.pixels = this.w * this.h;
+    this.image = this.ctx.createImageData(this.w, this.h);
 
-    this.buffer = [];
+    this.buf = [];
     for(var i = 0; i < this.workers; i++) {
-        var blockSize = this.getBlockOffset(i + 1) - this.getBlockOffset(i);
-        this.buffer[i] = new ArrayBuffer(blockSize);
+        var size = this.getOffset(i + 1) - this.getOffset(i);
+        this.buf[i] = new ArrayBuffer(size);
     }
 };
 
@@ -126,16 +126,16 @@ Ingemi.prototype.render = function() {
     for (var i = 0; i < this.workers; i++) {
         this.finishedThreads[i] = false;
         var r = this.makeRequestObject('draw', i);
-        this.threads[i]['postMessage'](r, [this.buffer[i]]);
+        this.threads[i]['postMessage'](r, [this.buf[i]]);
     }
 };
 
 /**
  * Create message to be passed to worker.
  * @param {String} type The type of request ('init' | 'draw' | 'rand').
- * @param {Number} index The index of the thread being messaged.
+ * @param {Number} block The index of the thread being messaged.
  */
-Ingemi.prototype.makeRequestObject = function(type, index) {
+Ingemi.prototype.makeRequestObject = function(type, block) {
     var r = {};
     r['type'] = type;
     switch (type) {
@@ -143,11 +143,10 @@ Ingemi.prototype.makeRequestObject = function(type, index) {
             var settings = r['settings'] = {};
             settings['dx'] = this.dx;
             settings['dy'] = this.dy;
-            settings['forcedHeight'] = this.forcedHeight;
-            settings['totalPixels'] = this.totalPixels;
-            settings['width'] = this.w;
-            settings['height'] = this.h;
-            settings['maxIteration'] = this.maxIteration;
+            settings['hScale'] = this.hScale;
+            settings['w'] = this.w;
+            settings['h'] = this.h;
+            settings['iterations'] = this.iterations;
             settings['minStdDev'] = this.minStdDev;
             break;
         case 'draw':
@@ -155,10 +154,10 @@ Ingemi.prototype.makeRequestObject = function(type, index) {
             state['x'] = this.x;
             state['y'] = this.y;
             state['z'] = this.z;
-            state['blockOffset'] = this.getBlockOffset(index);
-            state['blockSize'] = this.buffer[index].byteLength;
-            state['index'] = index;
-            r['buffer'] = this.buffer[index];
+            state['offset'] = this.getOffset(block);
+            state['size'] = this.buf[block].byteLength;
+            state['block'] = block;
+            r['buf'] = this.buf[block];
             break;
         case 'rand':
             break;
@@ -168,10 +167,10 @@ Ingemi.prototype.makeRequestObject = function(type, index) {
 
 /**
  * Get byte offset for a given thread.
- * @param {Number} index
+ * @param {Number} block
  */
-Ingemi.prototype.getBlockOffset = function(index) {
-    return Math.ceil(this.totalPixels * index / this.workers) * 4;
+Ingemi.prototype.getOffset = function(block) {
+    return Math.ceil(this.pixels * block / this.workers) * 4;
 };
 
 /**
@@ -183,10 +182,10 @@ Ingemi.prototype.handleMessage = function(data) {
         case 'init':
             break;
         case 'draw':
-            var i = data['index'];
-            this.buffer[i] = data['imagedata'];
-            var imagedata = new Uint8ClampedArray(this.buffer[i]);
-            this.imagedata.data.set(imagedata, data['blockOffset']);
+            var i = data['block'];
+            this.buf[i] = data['image'];
+            var img = new Uint8ClampedArray(this.buf[i]);
+            this.image.data.set(img, data['offset']);
             this.finishedThreads[i] = true;
             this.checkThreads();
             break;
@@ -203,9 +202,9 @@ Ingemi.prototype.handleMessage = function(data) {
  * Draw the final image to the screen.
  */
 Ingemi.prototype.draw = function() {
-    this.cvs.width = this.w;
-    this.cvs.height = this.h;
-    this.ctx.putImageData(this.imagedata, 0, 0);
+    this.canvas_.width = this.w;
+    this.canvas_.height = this.h;
+    this.ctx.putImageData(this.image, 0, 0);
 
     this.lock = false;
 };
@@ -228,7 +227,7 @@ Ingemi.prototype.zoom_ = function(factor) {
 Ingemi.prototype.center = function(x, y) {
     if (this.lock) return;
     this.x += (x / this.sample / this.w - 0.5) * this.dx * this.z;
-    this.y += (y / this.sample / this.h - 0.5) * this.dy * this.z / this.forcedHeight;
+    this.y += (y / this.sample / this.h - 0.5) * this.dy * this.z / this.hScale;
     this.render();
 };
 
@@ -278,9 +277,9 @@ Ingemi.prototype.rand = function() {
  */
 Ingemi.prototype.save_ = function(inplace) {
     var exportImage;
-    var displayWidth = this.cvs.width;
-    var displayHeight = this.cvs.height;
-    var dataURL = this.cvs.toDataURL("image/png");
+    var displayWidth = this.canvas_.width;
+    var displayHeight = this.canvas_.height;
+    var dataURL = this.canvas_.toDataURL("image/png");
     if (inplace) {
         //TODO Allow saving without spawing a new window
     } else {

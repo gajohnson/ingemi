@@ -1,22 +1,22 @@
-var type, buffer;
-var x, y, z, blockOffset, pixelOffset, index;
-var dx, dy, forcedHeight, blockSize, width, height, maxIteration, imagedata, minStdDev;
+var type, buf;
+var x, y, z, offset, block;
+var dx, dy, hScale, size, w, h, iterations, image, minStdDev;
 
 var renderBlock = function() { 
-    for(var i = blockOffset / 4, l = i + blockSize / 4, c = i; i < l; i++) {
-        setPixelColor(i - c, getValue(i % width, Math.floor(i/width)));
+    for(var i = offset / 4, l = i + size / 4, c = i; i < l; i++) {
+        setPixelColor(i - c, getValue(i % w, Math.floor(i / w)));
     }
 };
 
 var getValue = function(left, top) {
-    var scaledX = z * (dx * left / width - 1.75) + x;
-    var scaledY = z / forcedHeight * (dy * top / height - 1) + y;
+    var scaledX = z * (dx * left / w - 1.75) + x;
+    var scaledY = z / hScale * (dy * top / h - 1) + y;
 
-    /** Optimize against inner cartoid and return known maxIteration */
-    if (isInCartoid(scaledX, scaledY)) return maxIteration;
+    /** Optimize against inner cartoid and return known iterations */
+    if (isInCartoid(scaledX, scaledY)) return iterations;
 
     var xi = 0, yi = 0, iteration;
-    for(iteration = 0; xi*xi + yi*yi < 4 && iteration < maxIteration; iteration++) {
+    for(iteration = 0; xi*xi + yi*yi < 4 && iteration < iterations; iteration++) {
         var xtemp = xi*xi - yi*yi + scaledX;
         yi = 2*xi*yi + scaledY;
         xi = xtemp;
@@ -31,7 +31,7 @@ var isInCartoid = function(left, top) {
 
 var setPixelColor = function(pos, value) {
     var r, g, b;
-    value = 6 * value / maxIteration;
+    value = 6 * value / iterations;
     if (value < 1) {
         r = 255;
         g = value * 255;
@@ -57,7 +57,7 @@ var setPixelColor = function(pos, value) {
         g = 0;
         b = (6 - value) * 255;
     }
-    imagedata[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
+    image[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
 };
 
 var filterRandom = function() {
@@ -68,8 +68,8 @@ var filterRandom = function() {
         x = dx * (Math.random() - 0.5);
         y = dy * (Math.random() - 0.5);
         for(var i = 0; i < 64; i++) {
-            var left = Math.floor((i % 8) * width / 8);
-            var top = Math.floor(Math.floor(i / 8) * height / 8);
+            var left = Math.floor((i % 8) * w / 8);
+            var top = Math.floor(Math.floor(i / 8) * h / 8);
             points.push(getValue(left, top));
         }
         i++;
@@ -98,10 +98,10 @@ var stddev = function(array, average) {
 init = function(settings) {
     dx = settings['dx'];
     dy = settings['dy'];
-    forcedHeight = settings['forcedHeight'];
-    width = settings['width'];
-    height = settings['height'];
-    maxIteration = settings['maxIteration'];
+    hScale = settings['hScale'];
+    w = settings['w'];
+    h = settings['h'];
+    iterations = settings['iterations'];
     minStdDev = settings['minStdDev'];
 };
 
@@ -110,15 +110,15 @@ draw = function(msg, data) {
     x = state['x'];
     y = state['y'];
     z = state['z'];
-    blockOffset = state['blockOffset'];
-    blockSize = state['blockSize'];
-    index = state['index'];
-    buffer = data['buffer'];
-    imagedata = new Uint32Array(buffer);
+    offset = state['offset'];
+    size = state['size'];
+    block = state['block'];
+    buf = data['buf'];
+    image = new Uint32Array(buf);
     renderBlock();
-    msg['imagedata'] = buffer;
-    msg['blockOffset'] = blockOffset;
-    msg['index'] = index;
+    msg['image'] = buf;
+    msg['offset'] = offset;
+    msg['block'] = block;
 };
 
 rand = function() {
@@ -143,8 +143,8 @@ self.onmessage = function(event) {
     msg['x'] = x;
     msg['y'] = y;
     msg['z'] = z;
-    if (buffer && buffer.byteLength) {
-        self['postMessage'](msg, [buffer]);
+    if (buf && buf.byteLength) {
+        self['postMessage'](msg, [buf]);
     } else {
         self['postMessage'](msg);
     }
