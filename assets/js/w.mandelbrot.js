@@ -95,7 +95,7 @@ var stddev = function(array, average) {
     return Math.pow(sum / l, 0.5);
 };
 
-handleInitRequest = function(settings) {
+init = function(settings) {
     dx = settings['dx'];
     dy = settings['dy'];
     forcedHeight = settings['forcedHeight'];
@@ -105,7 +105,7 @@ handleInitRequest = function(settings) {
     minStdDev = settings['minStdDev'];
 };
 
-handleRenderRequest = function(msg, data) {
+draw = function(msg, data) {
     var state = data['state'];
     x = state['x'];
     y = state['y'];
@@ -121,7 +121,7 @@ handleRenderRequest = function(msg, data) {
     msg['index'] = index;
 };
 
-handleRandomRequest = function() {
+rand = function() {
     filterRandom();
 };
 
@@ -131,13 +131,13 @@ self.onmessage = function(event) {
     type = msg['type'] = data['type'];
     switch (type) {
         case 'init':
-            handleInitRequest(data['settings']);
+            init(data['settings']);
             break;
-        case 'render':
-            handleRenderRequest(msg, data);
+        case 'draw':
+            draw(msg, data);
             break;
-        case 'random':
-            handleRandomRequest();
+        case 'rand':
+            rand();
             break;
     }
     msg['x'] = x;

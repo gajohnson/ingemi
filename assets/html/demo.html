@@ -39,7 +39,7 @@
             addEventListener('keydown', function (e) {
                 switch (e.keyCode) {
                     case 82: // R
-                        ingemi.random();
+                        ingemi.rand();
                         break;
                     case 87: // W
                         ingemi.zoom(1/1.05);
@@ -47,28 +47,17 @@
                     case 83: // S
                         ingemi.zoom(2);
                         break;
-                    case 84: // T
-                        if (testLoop) {
-                            clearTimeout(testLoop);
-                            testLoop = null;
-                            ingemi.average();
-                        } else {
-                            console.log('START TEST: ' + ingemi.canvas.clientWidth + ' x ' + ingemi.canvas.clientHeight);
-                            ingemi.center(0, ingemi.canvas.clientHeight / 2);
-                            test();
-                        }
-                        break;
                     case 37: // Left
-                        ingemi.center(0, ingemi.canvas.clientHeight / 2);
+                        ingemi.center(0, ingemi.height() / 2);
                         break;
                     case 39: // Right
-                        ingemi.center(ingemi.canvas.clientWidth, ingemi.canvas.clientHeight / 2);
+                        ingemi.center(ingemi.width(), ingemi.height() / 2);
                         break;
                     case 38: // Up
-                        ingemi.center(ingemi.canvas.clientWidth / 2, 0);
+                        ingemi.center(ingemi.width() / 2, 0);
                         break;
                     case 40: // Down
-                        ingemi.center(ingemi.canvas.clientWidth / 2, ingemi.canvas.clientHeight);
+                        ingemi.center(ingemi.width() / 2, ingemi.height());
                         break;
                     case 90: // Z
                         ingemi.save();

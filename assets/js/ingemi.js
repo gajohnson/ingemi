@@ -48,10 +48,6 @@ Ingemi = function(container, args) {
     this.finishedThreads = [];
 
     this.lock = false;
-
-    this.timer = null;
-    this.time = 0;
-    this.renders = 0;
 };
 
 /**
@@ -67,24 +63,24 @@ Ingemi.prototype.init = function() {
  * Create a canvas in the parent div and inherit its size.
  */
 Ingemi.prototype.makeCanvas = function() {
-    this.canvas = document.createElement('canvas');
-    this.container.appendChild(this.canvas);
-    this.context = this.canvas.getContext('2d');
+    this.cvs = document.createElement('canvas');
+    this.container.appendChild(this.cvs);
+    this.ctx = this.cvs.getContext('2d');
 };
 
 /**
  * Set the internal size of the canvas element.
  */
 Ingemi.prototype.scaleCanvas = function() {
-    this.clientWidth = this.container.clientWidth;
-    this.clientHeight = this.container.clientHeight;
-    this.width = Math.floor(this.clientWidth / this.sample);
-    this.height = Math.floor(this.clientHeight / this.sample);
-    this.canvas.style.width = this.clientWidth + 'px';
-    this.canvas.style.height =  this.clientHeight + 'px';
-    this.forcedHeight = Math.round(this.clientWidth * this.dy / this.dx) / this.clientHeight;
-    this.totalPixels = this.width * this.height;
-    this.imagedata = this.context.createImageData(this.width, this.height);
+    var _width = this.container.clientWidth;
+    var _height = this.container.clientHeight;
+    this.w = Math.floor(_width / this.sample);
+    this.h = Math.floor(_height / this.sample);
+    this.cvs.style.width = _width + 'px';
+    this.cvs.style.height =  _height + 'px';
+    this.forcedHeight = Math.round(_width * this.dy / this.dx) / _height;
+    this.totalPixels = this.w * this.h;
+    this.imagedata = this.ctx.createImageData(this.w, this.h);
 
     this.buffer = [];
     for(var i = 0; i < this.workers; i++) {
@@ -127,19 +123,16 @@ Ingemi.prototype.render = function() {
     if (this.lock) return;
     this.lock = true;
 
-    // Benchmarking
-    this.timer = +new Date();
-
     for (var i = 0; i < this.workers; i++) {
         this.finishedThreads[i] = false;
-        var r = this.makeRequestObject('render', i);
+        var r = this.makeRequestObject('draw', i);
         this.threads[i]['postMessage'](r, [this.buffer[i]]);
     }
 };
 
 /**
  * Create message to be passed to worker.
- * @param {String} type The type of request ('init' | 'render' | 'random').
+ * @param {String} type The type of request ('init' | 'draw' | 'rand').
  * @param {Number} index The index of the thread being messaged.
  */
 Ingemi.prototype.makeRequestObject = function(type, index) {
@@ -152,12 +145,12 @@ Ingemi.prototype.makeRequestObject = function(type, index) {
             settings['dy'] = this.dy;
             settings['forcedHeight'] = this.forcedHeight;
             settings['totalPixels'] = this.totalPixels;
-            settings['width'] = this.width;
-            settings['height'] = this.height;
+            settings['width'] = this.w;
+            settings['height'] = this.h;
             settings['maxIteration'] = this.maxIteration;
             settings['minStdDev'] = this.minStdDev;
             break;
-        case 'render':
+        case 'draw':
             var state = r['state'] = {};
             state['x'] = this.x;
             state['y'] = this.y;
@@ -167,7 +160,7 @@ Ingemi.prototype.makeRequestObject = function(type, index) {
             state['index'] = index;
             r['buffer'] = this.buffer[index];
             break;
-        case 'random':
+        case 'rand':
             break;
     }
     return r;
@@ -189,7 +182,7 @@ Ingemi.prototype.handleMessage = function(data) {
     switch (data['type']) {
         case 'init':
             break;
-        case 'render':
+        case 'draw':
             var i = data['index'];
             this.buffer[i] = data['imagedata'];
             var imagedata = new Uint8ClampedArray(this.buffer[i]);
@@ -197,7 +190,7 @@ Ingemi.prototype.handleMessage = function(data) {
             this.finishedThreads[i] = true;
             this.checkThreads();
             break;
-        case 'random':
+        case 'rand':
             this.x = data['x'] || this.x;
             this.y = data['y'] || this.y;
             this.z = data['z'] || this.z;
@@ -210,13 +203,9 @@ Ingemi.prototype.handleMessage = function(data) {
  * Draw the final image to the screen.
  */
 Ingemi.prototype.draw = function() {
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
-    this.context.putImageData(this.imagedata, 0, 0);
-
-    // Benchmarking
-    this.time += (+new Date() - this.timer);
-    this.renders++;
+    this.cvs.width = this.w;
+    this.cvs.height = this.h;
+    this.ctx.putImageData(this.imagedata, 0, 0);
 
     this.lock = false;
 };
@@ -225,7 +214,7 @@ Ingemi.prototype.draw = function() {
  * Set the zoom factor (absolute).
  * @param {Float} factor Multiplier for zoom
  */
-Ingemi.prototype.zoom = function(factor) {
+Ingemi.prototype.zoom_ = function(factor) {
     if (this.lock) return;
     this.z *= factor;
     this.render();
@@ -238,25 +227,32 @@ Ingemi.prototype.zoom = function(factor) {
  */
 Ingemi.prototype.center = function(x, y) {
     if (this.lock) return;
-    this.x += (x / this.sample / this.width - 0.5) * this.dx * this.z;
-    this.y += (y / this.sample / this.height - 0.5) * this.dy * this.z / this.forcedHeight;
+    this.x += (x / this.sample / this.w - 0.5) * this.dx * this.z;
+    this.y += (y / this.sample / this.h - 0.5) * this.dy * this.z / this.forcedHeight;
     this.render();
 };
 
 /**
- * Reset the viewport: offsets and zoom.
+ * Getter for width
+ * @return {Integer} Width of containing div.
  */
-Ingemi.prototype.reset = function() {
-    this.x = 0;
-    this.y = 0;
-    this.z = 1;
+Ingemi.prototype.width_ = function() {
+    return this.container.clientWidth;
+};
+
+/**
+ * Getter for height
+ * @return {Integer} height of containing div.
+ */
+Ingemi.prototype.height_ = function() {
+    return this.container.clientHeight;
 };
 
 /**
  * Get or set the current viewport.
  * @param {Object=} coords
  */
-Ingemi.prototype.state = function(coords) {
+Ingemi.prototype.state_ = function(coords) {
     if (!coords) return {
         'x': this.x,
         'y': this.y,
@@ -270,9 +266,9 @@ Ingemi.prototype.state = function(coords) {
 /**
  * Generate a random image. Candidates are filtered by standard deviation of 16 sample points.
  */
-Ingemi.prototype.random = function() {
+Ingemi.prototype.rand = function() {
     if (this.lock) return;
-    var r = this.makeRequestObject('random');
+    var r = this.makeRequestObject('rand');
     this.threads[0]['postMessage'](r);
 };
 
@@ -280,11 +276,11 @@ Ingemi.prototype.random = function() {
  * Export the current view to PNG
  * @param {Boolean} inplace Create the image in the same window | Open a new window.
  */
-Ingemi.prototype.save = function(inplace) {
+Ingemi.prototype.save_ = function(inplace) {
     var exportImage;
-    var displayWidth = this.canvas.width;
-    var displayHeight = this.canvas.height;
-    var dataURL = this.canvas.toDataURL("image/png");
+    var displayWidth = this.cvs.width;
+    var displayHeight = this.cvs.height;
+    var dataURL = this.cvs.toDataURL("image/png");
     if (inplace) {
         //TODO Allow saving without spawing a new window
     } else {
@@ -297,13 +293,6 @@ Ingemi.prototype.save = function(inplace) {
         exportImage = imageWindow.document.getElementById("exportImage");
     }
     exportImage.src = dataURL;
-};
-
-/**
- * Print the running average render time for benchmarking purposes.
- */
-Ingemi.prototype.average = function() {
-    console.log('Average render time: ' + Math.round(this.time / this.renders) + 'ms');
 };
 
 /**
@@ -322,9 +311,9 @@ Ingemi.prototype['init'] = Ingemi.prototype.init;
 Ingemi.prototype['render'] = Ingemi.prototype.render;
 
 /**
- * @export Ingemi.prototype.zoom as window.Ingemi.prototype.zoom
+ * @export Ingemi.prototype.zoom_ as window.Ingemi.prototype.zoom
  */
-Ingemi.prototype['zoom'] = Ingemi.prototype.zoom;
+Ingemi.prototype['zoom'] = Ingemi.prototype.zoom_;
 
 /**
  * @export Ingemi.prototype.center as window.Ingemi.prototype.center
@@ -332,28 +321,28 @@ Ingemi.prototype['zoom'] = Ingemi.prototype.zoom;
 Ingemi.prototype['center'] = Ingemi.prototype.center;
 
 /**
- * @export Ingemi.prototype.reset as window.Ingemi.prototype.reset
+ * @export Ingemi.prototype.width_ as window.Ingemi.prototype.width
  */
-Ingemi.prototype['reset'] = Ingemi.prototype.reset;
+Ingemi.prototype['width'] = Ingemi.prototype.width_;
 
 /**
- * @export Ingemi.prototype.state as window.Ingemi.prototype.state
+ * @export Ingemi.prototype.height_ as window.Ingemi.prototype.height
  */
-Ingemi.prototype['state'] = Ingemi.prototype.state;
+Ingemi.prototype['height'] = Ingemi.prototype.height_;
 
 /**
- * @export Ingemi.prototype.random as window.Ingemi.prototype.random
+ * @export Ingemi.prototype.state_ as window.Ingemi.prototype.state
  */
-Ingemi.prototype['random'] = Ingemi.prototype.random;
+Ingemi.prototype['state'] = Ingemi.prototype.state_;
 
 /**
- * @export Ingemi.prototype.average as window.Ingemi.prototype.average
+ * @export Ingemi.prototype.rand as window.Ingemi.prototype.rand
  */
-Ingemi.prototype['average'] = Ingemi.prototype.average;
+Ingemi.prototype['rand'] = Ingemi.prototype.rand;
 
 /**
- * @export Ingemi.prototype.save as window.Ingemi.prototype.save
+ * @export Ingemi.prototype.save_ as window.Ingemi.prototype.save
  */
-Ingemi.prototype['save'] = Ingemi.prototype.save;
+Ingemi.prototype['save'] = Ingemi.prototype.save_;
 
 })();
