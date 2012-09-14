@@ -4,7 +4,7 @@ var dx, dy, hScale, size, w, h, iterations, image, minStdDev;
 
 var renderBlock = function() { 
     for(var i = offset / 4, l = i + size / 4, c = i; i < l; i++) {
-        setPixelColor(i - c, getValue(i % w, Math.floor(i / w)));
+        setPixelColor(i - c, 6 * getValue(i % w, Math.floor(i / w)) / iterations);
     }
 };
 
@@ -29,33 +29,32 @@ var isInCartoid = function(left, top) {
     return left <= Math.sqrt(p) - (2 * p) + 0.25;
 };
 
-var setPixelColor = function(pos, value) {
-    var r, g, b;
-    value = 6 * value / iterations;
-    if (value < 1) {
-        r = 255;
-        g = value * 255;
-        b = 0;
-    } else if (value < 2) {
-        r = (2 - value) * 255;
-        g = 255;
-        b = 0;
-    } else if (value < 3) {
-        r = 0;
-        g = 255;
-        b = (value - 2) * 255;
-    } else if (value < 4) {
-        r = 0;
-        g = (4 - value) * 255;
-        b = 255;
-    } else if (value < 5) {
-        r = (value - 4) * 255;
-        g = 0;
-        b = 255;
+var setPixelColor = function(pos, hue) {
+    var r, g, b, minValue = 15, maxValue = 220;
+    if (hue < 1) {
+        r = hue * maxValue;
+        g = minValue;
+        b = hue * maxValue;
+    } else if (hue < 2) {
+        r = (2 - hue) * maxValue;
+        g = minValue;
+        b = maxValue;
+    } else if (hue < 3) {
+        r = minValue;
+        g = (hue - 2) * maxValue;
+        b = (3 - hue) * maxValue;
+    } else if (hue < 4) {
+        r = (hue - 3) * maxValue;
+        g = maxValue;
+        b = minValue;
+    } else if (hue < 5) {
+        r = maxValue;
+        g = (5 - hue) * maxValue;
+        b = minValue;
     } else {
-        r = 255;
-        g = 0;
-        b = (6 - value) * 255;
+        r = (6 - hue) * maxValue;
+        g = minValue;
+        b = minValue;
     }
     image[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
 };
