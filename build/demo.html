@@ -22,8 +22,14 @@
         <script type='text/javascript'>
             var parentDiv = document.getElementById('ingemi');
             var ingemi = new Ingemi(parentDiv, {
-                    sample: 0.5,
-                    iterations: 511
+                sample: 2,
+                iterations: 1000,
+                onrender: function() {
+                    this.resample(0.5);
+                    this.render(true, function() {
+                        ingemi.resample(2);
+                    });
+                }
             }); // Add any additional configuration here
             ingemi.init();
             ingemi.render();

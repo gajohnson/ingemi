@@ -46,6 +46,7 @@ Ingemi = function(container, args) {
 
     this.threads = [];
     this.finishedThreads = [];
+    this.requestCallbacks = {};
 
     this.lock = false;
 };
@@ -109,23 +110,35 @@ Ingemi.prototype.spawnThreads = function(filename) {
  * Check if all threads have completed.
  * @return {Boolean}
  */
-Ingemi.prototype.checkThreads = function() {
+Ingemi.prototype.checkThreads = function(callbackId) {
     for (var i = 0, l = this.finishedThreads.length; i < l; i++) {
         if (!this.finishedThreads[i]) return;
     }
     this.draw();
+
+    if (callbackId) {
+        var callback = this.requestCallbacks[callbackId];
+        if (callback) {
+            callback();
+            delete this.requestCallbacks[callbackId];
+        }
+    }
 };
 
 /**
  * Render the entire scene using the current viewport and context.
+ * @param {Boolean=} rerender If true, render will not call onrender.
+ * @param {Function=} callback Post-render hook.
  */
-Ingemi.prototype.render = function() {
+Ingemi.prototype.render = function(rerender, callback) {
     if (this.lock) return;
     this.lock = true;
 
+    this.rerender = rerender || false;
+
     for (var i = 0; i < this.workers; i++) {
         this.finishedThreads[i] = false;
-        var r = this.makeRequestObject('draw', i);
+        var r = this.makeRequestObject('draw', i, callback);
         this.threads[i]['postMessage'](r, [this.buf[i]]);
     }
 };
@@ -134,10 +147,16 @@ Ingemi.prototype.render = function() {
  * Create message to be passed to worker.
  * @param {String} type The type of request ('init' | 'draw' | 'rand').
  * @param {Number} block The index of the thread being messaged.
+ * @param {Function=} callback Post-request hook.
  */
-Ingemi.prototype.makeRequestObject = function(type, block) {
+Ingemi.prototype.makeRequestObject = function(type, block, callback) {
     var r = {};
     r['type'] = type;
+    if (callback) {
+        var key = Math.floor(Math.random()*100000);
+        this.requestCallbacks[key] = callback;
+        r['callback'] = key;
+    }
     switch (type) {
         case 'init':
             var settings = r['settings'] = {};
@@ -182,12 +201,13 @@ Ingemi.prototype.handleMessage = function(data) {
         case 'init':
             break;
         case 'draw':
+            var callbackId = data['callback'] || null;
             var i = data['block'];
             this.buf[i] = data['image'];
             var img = new Uint8ClampedArray(this.buf[i]);
             this.image.data.set(img, data['offset']);
             this.finishedThreads[i] = true;
-            this.checkThreads();
+            this.checkThreads(callbackId);
             break;
         case 'rand':
             this.x = data['x'] || this.x;
@@ -205,8 +225,11 @@ Ingemi.prototype.draw = function() {
     this.canvas_.width = this.w;
     this.canvas_.height = this.h;
     this.ctx.putImageData(this.image, 0, 0);
-
     this.lock = false;
+    if (this.onrender && !this.rerender) {
+        this.rerender = false;
+        this.onrender();
+    }
 };
 
 /**
@@ -229,6 +252,19 @@ Ingemi.prototype.center = function(x, y) {
     this.x += (x / this.sample / this.w - 0.5) * this.dx * this.z;
     this.y += (y / this.sample / this.h - 0.5) * this.dy * this.z / this.hScale;
     this.render();
+};
+
+/**
+ * Resample the image.
+ * @param {Float} sample New sample ratio.
+ */
+Ingemi.prototype.resample = function(sample) {
+    this.sample = sample;
+    this.scaleCanvas();
+    for (var j = 0; j < this.workers; j++) {
+        var r = this.makeRequestObject('init');
+        this.threads[j]['postMessage'](r);
+    }
 };
 
 /**
@@ -318,6 +354,11 @@ Ingemi.prototype['zoom'] = Ingemi.prototype.zoom_;
  * @export Ingemi.prototype.center as window.Ingemi.prototype.center
  */
 Ingemi.prototype['center'] = Ingemi.prototype.center;
+
+/**
+ * @export Ingemi.prototype.resample as window.Ingemi.prototype.resample
+ */
+Ingemi.prototype['resample'] = Ingemi.prototype.resample;
 
 /**
  * @export Ingemi.prototype.width_ as window.Ingemi.prototype.width

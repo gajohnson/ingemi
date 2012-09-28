@@ -56,6 +56,10 @@ var setPixelColor = function(pos, hue) {
         g = minValue;
         b = minValue;
     }
+    /*var scale = Math.sin(hue * Math.PI * 20) / 2 + 0.5;
+    r *= scale;
+    g *= scale;
+    b *= scale;*/
     image[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
 };
 
@@ -128,6 +132,7 @@ self.onmessage = function(event) {
     var msg = {};
     var data = event['data'];
     type = msg['type'] = data['type'];
+    msg['callback'] = data['callback'];
     switch (type) {
         case 'init':
             init(data['settings']);

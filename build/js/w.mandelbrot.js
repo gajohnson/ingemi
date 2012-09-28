@@ -1,3 +1,155 @@
-var i,j,k,m,n,o,p,q,r,s,t,u,v,w,x,y;function z(a,b){var c=n*(q*a/u-1.75)+k,f=n/s*(r*b/v-1)+m,e=(c-0.25)*(c-0.25)+f*f;if(c<=Math.sqrt(e)-2*e+0.25)return w;var d=e=0,g;for(g=0;4>e*e+d*d&&g<w;g++)var h=e*e-d*d+c,d=2*e*d+f,e=h;return g}function A(a){for(var b=0,c=a.length,f=0;f<c;f++)b+=a[f];return b/c}function B(a,b){for(var c=a.length,f=0,e=0;e<c;e++)var d=a[e]-b,f=f+d*d;return Math.pow(f/c,0.5)}init=function(a){q=a.dx;r=a.dy;s=a.hScale;u=a.w;v=a.h;w=a.iterations;y=a.minStdDev};
-draw=function(a,b){var c=b.state;k=c.x;m=c.y;n=c.z;o=c.offset;t=c.size;p=c.block;j=b.buf;x=new Uint32Array(j);for(var c=o/4,f=c+t/4,e=c;c<f;c++){var d=6*z(c%u,Math.floor(c/u))/w,g=void 0,h=void 0,l=void 0;1>d?(g=220*d,h=15,l=220*d):2>d?(g=220*(2-d),h=15,l=220):3>d?(g=15,h=220*(d-2),l=220*(3-d)):(4>d?(g=220*(d-3),h=220):5>d?(g=220,h=220*(5-d)):(g=220*(6-d),h=15),l=15);x[c-e]=-16777216|l<<16|h<<8|g}a.image=j;a.offset=o;a.block=p};
-rand=function(){var a,b=0;do{a=[];n=1/Math.pow(2,Math.floor(22*Math.random())+10);k=q*(Math.random()-0.5);m=r*(Math.random()-0.5);for(b=0;64>b;b++)a.push(z(Math.floor(b%8*u/8),Math.floor(Math.floor(b/8)*v/8)));b++}while(B(a,A(a))<y&&100>b)};self.onmessage=function(a){var b={},a=a.data;i=b.type=a.type;switch(i){case "init":init(a.settings);break;case "draw":draw(b,a);break;case "rand":rand()}b.x=k;b.y=m;b.z=n;j&&j.byteLength?self.postMessage(b,[j]):self.postMessage(b)};
+var type, buf;
+var x, y, z, offset, block;
+var dx, dy, hScale, size, w, h, iterations, image, minStdDev;
+
+var renderBlock = function() { 
+    for(var i = offset / 4, l = i + size / 4, c = i; i < l; i++) {
+        setPixelColor(i - c, 6 * getValue(i % w, Math.floor(i / w)) / iterations);
+    }
+};
+
+var getValue = function(left, top) {
+    var scaledX = z * (dx * left / w - 1.75) + x;
+    var scaledY = z / hScale * (dy * top / h - 1) + y;
+
+    /** Optimize against inner cartoid and return known iterations */
+    if (isInCartoid(scaledX, scaledY)) return iterations;
+
+    var xi = 0, yi = 0, iteration;
+    for(iteration = 0; xi*xi + yi*yi < 4 && iteration < iterations; iteration++) {
+        var xtemp = xi*xi - yi*yi + scaledX;
+        yi = 2*xi*yi + scaledY;
+        xi = xtemp;
+    }
+    return iteration;
+};
+
+var isInCartoid = function(left, top) {
+    var p = (left - 0.25) * (left - 0.25) + (top * top);
+    return left <= Math.sqrt(p) - (2 * p) + 0.25;
+};
+
+var setPixelColor = function(pos, hue) {
+    var r, g, b, minValue = 15, maxValue = 220;
+    if (hue < 1) {
+        r = hue * maxValue;
+        g = minValue;
+        b = hue * maxValue;
+    } else if (hue < 2) {
+        r = (2 - hue) * maxValue;
+        g = minValue;
+        b = maxValue;
+    } else if (hue < 3) {
+        r = minValue;
+        g = (hue - 2) * maxValue;
+        b = (3 - hue) * maxValue;
+    } else if (hue < 4) {
+        r = (hue - 3) * maxValue;
+        g = maxValue;
+        b = minValue;
+    } else if (hue < 5) {
+        r = maxValue;
+        g = (5 - hue) * maxValue;
+        b = minValue;
+    } else {
+        r = (6 - hue) * maxValue;
+        g = minValue;
+        b = minValue;
+    }
+    /*var scale = Math.sin(hue * Math.PI * 20) / 2 + 0.5;
+    r *= scale;
+    g *= scale;
+    b *= scale;*/
+    image[pos] = (255 << 24) | (b << 16) | (g << 8) | r;
+};
+
+var filterRandom = function() {
+    var points, max = 100, i = 0;
+    do {
+        points = [];
+        z = 1 / Math.pow(2, Math.floor(Math.random()*22) + 10)
+        x = dx * (Math.random() - 0.5);
+        y = dy * (Math.random() - 0.5);
+        for(var i = 0; i < 64; i++) {
+            var left = Math.floor((i % 8) * w / 8);
+            var top = Math.floor(Math.floor(i / 8) * h / 8);
+            points.push(getValue(left, top));
+        }
+        i++;
+    } while (stddev(points, average(points)) < minStdDev && i < max);
+    return [x, y, z];
+};
+
+var average = function(array) {
+    var sum = 0, l = array.length;
+    for(var i = 0; i < l; i++) {
+        sum += array[i];
+    }
+    return sum / l;
+};
+
+var stddev = function(array, average) {
+    var l = array.length;
+    var sum = 0;
+    for(var i = 0; i < l; i++) {
+        var x = array[i] - average;
+        sum += x * x;
+    }
+    return Math.pow(sum / l, 0.5);
+};
+
+init = function(settings) {
+    dx = settings['dx'];
+    dy = settings['dy'];
+    hScale = settings['hScale'];
+    w = settings['w'];
+    h = settings['h'];
+    iterations = settings['iterations'];
+    minStdDev = settings['minStdDev'];
+};
+
+draw = function(msg, data) {
+    var state = data['state'];
+    x = state['x'];
+    y = state['y'];
+    z = state['z'];
+    offset = state['offset'];
+    size = state['size'];
+    block = state['block'];
+    buf = data['buf'];
+    image = new Uint32Array(buf);
+    renderBlock();
+    msg['image'] = buf;
+    msg['offset'] = offset;
+    msg['block'] = block;
+};
+
+rand = function() {
+    filterRandom();
+};
+
+self.onmessage = function(event) {
+    var msg = {};
+    var data = event['data'];
+    type = msg['type'] = data['type'];
+    msg['callback'] = data['callback'];
+    switch (type) {
+        case 'init':
+            init(data['settings']);
+            break;
+        case 'draw':
+            draw(msg, data);
+            break;
+        case 'rand':
+            rand();
+            break;
+    }
+    msg['x'] = x;
+    msg['y'] = y;
+    msg['z'] = z;
+    if (buf && buf.byteLength) {
+        self['postMessage'](msg, [buf]);
+    } else {
+        self['postMessage'](msg);
+    }
+};
