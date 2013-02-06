@@ -17,8 +17,6 @@
  * @property {Float} sample Used to strech and compress internal canvas dimensions.
  * @property {Number} workers Number of threads to use.
  * @property {Float} minStdDev Minimum threshold standard deviation in random images.
- * @property {Function} onrender Callback function fired every time a render
- *     is completed.
  * @throws Error if container is not a valid <div>.
  */
 Ingemi = function(container, args) {
@@ -39,7 +37,7 @@ Ingemi = function(container, args) {
 
     this.workers = args['workers'] || 4;
     this.minStdDev = args['minStdDev'] || 10;
-    this.onrender = (typeof args['onrender'] === 'function') ? args['onrender'] : null;
+
 
     this.dx = 3.5;
     this.dy = 2;
@@ -55,9 +53,11 @@ Ingemi = function(container, args) {
  * Initialize the canvas element.
  */
 Ingemi.prototype.init = function() {
+    if (this.lock) return;
     this.makeCanvas();
     this.scaleCanvas();
     this.spawnThreads('js/w.mandelbrot.js');
+    this.bindListeners();
 };
 
 /**
@@ -127,14 +127,12 @@ Ingemi.prototype.checkThreads = function(callbackId) {
 
 /**
  * Render the entire scene using the current viewport and context.
- * @param {Boolean=} rerender If true, render will not call onrender.
  * @param {Function=} callback Post-render hook.
  */
-Ingemi.prototype.render = function(rerender, callback) {
+Ingemi.prototype.render = function(callback) {
     if (this.lock) return;
     this.lock = true;
-
-    this.rerender = rerender || false;
+    callback = (typeof callback === 'function') ? callback : null;
 
     for (var i = 0; i < this.workers; i++) {
         this.finishedThreads[i] = false;
@@ -226,10 +224,6 @@ Ingemi.prototype.draw = function() {
     this.canvas_.height = this.h;
     this.ctx.putImageData(this.image, 0, 0);
     this.lock = false;
-    if (this.onrender && !this.rerender) {
-        this.rerender = false;
-        this.onrender();
-    }
 };
 
 /**
@@ -239,7 +233,6 @@ Ingemi.prototype.draw = function() {
 Ingemi.prototype.zoom_ = function(factor) {
     if (this.lock) return;
     this.z *= factor;
-    this.render();
 };
 
 /**
@@ -251,7 +244,6 @@ Ingemi.prototype.center = function(x, y) {
     if (this.lock) return;
     this.x += (x / this.sample / this.w - 0.5) * this.dx * this.z;
     this.y += (y / this.sample / this.h - 0.5) * this.dy * this.z / this.hScale;
-    this.render();
 };
 
 /**
@@ -259,6 +251,8 @@ Ingemi.prototype.center = function(x, y) {
  * @param {Float} sample New sample ratio.
  */
 Ingemi.prototype.resample = function(sample) {
+    if (!sample) return this.sample;
+    if (this.lock) return;
     this.sample = sample;
     this.scaleCanvas();
     for (var j = 0; j < this.workers; j++) {
@@ -307,6 +301,71 @@ Ingemi.prototype.rand = function() {
     this.threads[0]['postMessage'](r);
 };
 
+Ingemi.prototype.bindListeners = function() {
+    this.listen(window, 'keydown', this.handleKeyDown);
+    this.listen(window, 'resize', this.debounce_(this.handleResize));
+    this.listen(this.container, 'click', this.handleClick);
+};
+
+Ingemi.prototype.listen = function(target, type, handler) {
+    var that = this;
+    target.addEventListener(type, function(event) {
+        handler.call(that, event);
+    });
+}
+
+Ingemi.prototype.handleResize = function(event) {
+    this.render();
+};
+
+Ingemi.prototype.handleClick = function(event) {
+    this.center(event.clientX, event.clientY);
+    this.render();
+}
+
+Ingemi.prototype.handleKeyDown = function(event) {
+    switch (event.keyCode) {
+        case 82: // R
+            this.rand();
+            break;
+        case 87: // W
+            this.zoom_(1/1.05);
+            this.render();
+            break;
+        case 83: // S
+            this.zoom_(2);
+            this.render();
+            break;
+        case 65: // A
+            this.resample(this.sample * 2);
+            this.render();
+            break;
+        case 68: // D
+            this.resample(this.sample / 2);
+            this.render();
+            break;
+        case 37: // Left
+            this.center(0, this.height_() / 2);
+            this.render();
+            break;
+        case 39: // Right
+            this.center(this.width_(), this.height_() / 2);
+            this.render();
+            break;
+        case 38: // Up
+            this.center(this.width_() / 2, 0);
+            this.render();
+            break;
+        case 40: // Down
+            this.center(this.width_() / 2, this.height_());
+            this.render();
+            break;
+        case 90: // Z
+            this.save();
+            break;
+    }
+};
+
 /**
  * Export the current view to PNG
  * @param {Boolean} inplace Create the image in the same window | Open a new window.
@@ -328,6 +387,24 @@ Ingemi.prototype.save_ = function(inplace) {
         exportImage = imageWindow.document.getElementById("exportImage");
     }
     exportImage.src = dataURL;
+};
+
+Ingemi.prototype.debounce_ = function(func, threshold) {
+
+    var timeout;
+
+    return function debounced () {
+        var obj = this, args = arguments;
+        function delayed () {
+            func.apply(obj, args);
+            timeout = null;
+        };
+
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(delayed, threshold || 500);
+    };
 };
 
 /**
